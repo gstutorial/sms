@@ -12,8 +12,6 @@ content="width=device-width, initial-scale=1.0">
 SMS Work Report Generator
 </title>
 
-<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -493,7 +491,7 @@ SMS Work Report Generator
 
 <div class="subtitle">
 
-Generate Section Wise Work Reports From Google Sheet
+Generate Section Wise Work Reports
 
 </div>
 
@@ -610,22 +608,27 @@ function showToast(message,type='info'){
 
 }
 
-function formatDate(dateStr){
+function parseGoogleDate(value){
 
-    if(!dateStr) return null;
+    if(!value) return null;
 
-    if(typeof dateStr === 'string'){
+    if(
+    typeof value === 'string' &&
+    value.startsWith('Date(')
+    ){
 
-        const parts =
-        dateStr.split('/');
+        const match =
+        value.match(
+        /Date\((\d+),(\d+),(\d+)\)/
+        );
 
-        if(parts.length === 3){
+        if(match){
 
             return new Date(
 
-                parseInt(parts[2]),
-                parseInt(parts[1]) - 1,
-                parseInt(parts[0])
+                Number(match[1]),
+                Number(match[2]),
+                Number(match[3])
 
             );
 
@@ -634,6 +637,22 @@ function formatDate(dateStr){
     }
 
     return null;
+
+}
+
+function formatDisplayDate(date){
+
+    return String(date.getDate())
+    .padStart(2,'0')
+
+    + '/' +
+
+    String(date.getMonth()+1)
+    .padStart(2,'0')
+
+    + '/' +
+
+    date.getFullYear();
 
 }
 
@@ -659,15 +678,10 @@ async function fetchSheetData(){
         text.substring(47).slice(0,-2)
     );
 
-    const rows =
-    json.table.rows;
+    return json.table.rows.map(row=>({
 
-    return rows.map(row=>({
-
-        date:
-        row.c[0]?.f ||
-        row.c[0]?.v ||
-        '',
+        rawDate:
+        row.c[0]?.v || '',
 
         section:
         row.c[1]?.v || '',
@@ -730,7 +744,7 @@ async function generateReports(){
         rows.forEach(row=>{
 
             const rowDate =
-            formatDate(row.date);
+            parseGoogleDate(row.rawDate);
 
             if(
             rowDate &&
@@ -745,7 +759,14 @@ async function generateReports(){
                 }
 
                 sectionData[row.section]
-                .push(row);
+                .push({
+
+                    ...row,
+
+                    formattedDate:
+                    formatDisplayDate(rowDate)
+
+                });
 
             }
 
@@ -1039,7 +1060,7 @@ async function createPDF(section){
             const leftTable =
             rows.map(r=>[
 
-                r.date,
+                r.formattedDate,
                 r.item,
                 r.thickness,
                 r.quantity
