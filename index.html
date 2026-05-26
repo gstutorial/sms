@@ -1,0 +1,1379 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+SMS Work Report Generator
+</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<meta name="theme-color"
+content="#0f172a">
+
+<style>
+
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+
+font-family:Arial,sans-serif;
+
+background:
+linear-gradient(
+135deg,
+#020617,
+#0f172a,
+#1e293b
+);
+
+min-height:100vh;
+
+padding:10px;
+
+color:white;
+
+}
+
+.container{
+
+max-width:850px;
+
+margin:auto;
+
+background:
+rgba(255,255,255,0.06);
+
+backdrop-filter:blur(18px);
+
+border-radius:30px;
+
+padding:18px;
+
+border:
+1px solid rgba(255,255,255,0.08);
+
+box-shadow:
+0 20px 50px rgba(0,0,0,0.45);
+
+}
+
+.logo{
+
+width:90px;
+height:90px;
+
+object-fit:contain;
+
+display:block;
+
+margin:auto;
+
+filter:
+drop-shadow(
+0 10px 25px rgba(0,0,0,0.4)
+);
+
+}
+
+.title{
+
+text-align:center;
+
+font-size:34px;
+
+font-weight:900;
+
+margin-top:10px;
+
+line-height:1.1;
+
+}
+
+.subtitle{
+
+text-align:center;
+
+margin-top:8px;
+
+color:#cbd5e1;
+
+font-size:15px;
+
+margin-bottom:20px;
+
+}
+
+.filter-box{
+
+background:
+rgba(255,255,255,0.05);
+
+padding:18px;
+
+border-radius:24px;
+
+margin-bottom:18px;
+
+}
+
+.input-group{
+
+margin-bottom:14px;
+
+}
+
+.input-label{
+
+display:block;
+
+margin-bottom:8px;
+
+font-size:14px;
+
+font-weight:bold;
+
+}
+
+.date-input{
+
+width:100%;
+
+padding:14px;
+
+border:none;
+
+border-radius:16px;
+
+font-size:15px;
+
+font-weight:700;
+
+background:white;
+
+}
+
+.generate-btn{
+
+width:100%;
+
+padding:15px;
+
+border:none;
+
+border-radius:18px;
+
+background:
+linear-gradient(
+135deg,
+#2563eb,
+#06b6d4
+);
+
+font-size:18px;
+
+font-weight:900;
+
+color:white;
+
+cursor:pointer;
+
+box-shadow:
+0 10px 30px rgba(37,99,235,0.35);
+
+}
+
+.loading{
+
+display:none;
+
+text-align:center;
+
+margin-top:14px;
+
+font-size:16px;
+
+font-weight:bold;
+
+}
+
+.results{
+
+display:flex;
+
+flex-direction:column;
+
+gap:16px;
+
+margin-top:16px;
+
+}
+
+.section-card{
+
+background:
+linear-gradient(
+135deg,
+rgba(255,255,255,0.09),
+rgba(255,255,255,0.04)
+);
+
+border-radius:24px;
+
+padding:18px;
+
+border:
+1px solid rgba(255,255,255,0.08);
+
+box-shadow:
+0 10px 25px rgba(0,0,0,0.25);
+
+}
+
+.section-top{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+margin-bottom:14px;
+
+gap:10px;
+
+}
+
+.section-name{
+
+font-size:22px;
+
+font-weight:900;
+
+display:flex;
+
+align-items:center;
+
+gap:10px;
+
+}
+
+.section-badge{
+
+width:42px;
+height:42px;
+
+border-radius:50%;
+
+background:
+linear-gradient(
+135deg,
+#2563eb,
+#7c3aed
+);
+
+display:flex;
+
+align-items:center;
+
+justify-content:center;
+
+font-weight:bold;
+
+font-size:18px;
+
+}
+
+.summary-cards{
+
+display:grid;
+
+grid-template-columns:
+repeat(4,1fr);
+
+gap:10px;
+
+margin-bottom:14px;
+
+}
+
+.summary-box{
+
+background:
+rgba(255,255,255,0.06);
+
+border-radius:18px;
+
+padding:14px;
+
+text-align:center;
+
+}
+
+.summary-value{
+
+font-size:24px;
+
+font-weight:900;
+
+color:#38bdf8;
+
+margin-bottom:4px;
+
+}
+
+.summary-label{
+
+font-size:11px;
+
+color:#cbd5e1;
+
+}
+
+.all-section-card{
+
+background:
+linear-gradient(
+135deg,
+rgba(37,99,235,0.20),
+rgba(124,58,237,0.18)
+);
+
+padding:14px;
+
+border-radius:18px;
+
+margin-bottom:14px;
+
+border:
+1px solid rgba(255,255,255,0.08);
+
+}
+
+.all-section-title{
+
+font-size:16px;
+
+font-weight:900;
+
+margin-bottom:10px;
+
+color:#f8fafc;
+
+}
+
+.all-item{
+
+display:flex;
+
+justify-content:space-between;
+
+padding:8px 0;
+
+border-bottom:
+1px dashed rgba(255,255,255,0.08);
+
+font-size:13px;
+
+}
+
+.button-row{
+
+display:flex;
+
+gap:10px;
+
+margin-top:14px;
+
+}
+
+.download-btn{
+
+flex:1;
+
+padding:14px;
+
+border:none;
+
+border-radius:16px;
+
+background:
+linear-gradient(
+135deg,
+#16a34a,
+#22c55e
+);
+
+color:white;
+
+font-size:15px;
+
+font-weight:900;
+
+cursor:pointer;
+
+}
+
+.share-btn{
+
+width:120px;
+
+border:none;
+
+border-radius:16px;
+
+background:
+linear-gradient(
+135deg,
+#2563eb,
+#38bdf8
+);
+
+color:white;
+
+font-size:15px;
+
+font-weight:900;
+
+cursor:pointer;
+
+}
+
+.footer{
+
+text-align:center;
+
+margin-top:20px;
+
+color:#cbd5e1;
+
+font-size:12px;
+
+line-height:1.6;
+
+}
+
+#toast{
+
+position:fixed;
+
+top:20px;
+
+left:50%;
+
+transform:translateX(-50%);
+
+background:
+linear-gradient(
+135deg,
+#111827,
+#1f2937
+);
+
+padding:14px 20px;
+
+border-radius:18px;
+
+color:white;
+
+font-weight:bold;
+
+z-index:99999;
+
+display:none;
+
+box-shadow:
+0 10px 30px rgba(0,0,0,0.4);
+
+}
+
+@media(max-width:650px){
+
+.summary-cards{
+
+grid-template-columns:
+repeat(2,1fr);
+
+}
+
+.title{
+
+font-size:28px;
+
+}
+
+.section-name{
+
+font-size:18px;
+
+}
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="logo.png"
+class="logo">
+
+<div class="title">
+
+SMS WORK REPORT
+
+</div>
+
+<div class="subtitle">
+
+App Created By Gobind Sharma
+
+</div>
+
+<div class="filter-box">
+
+<div class="input-group">
+
+<label class="input-label">
+
+FROM DATE
+
+</label>
+
+<input type="date"
+id="fromDate"
+class="date-input">
+
+</div>
+
+<div class="input-group">
+
+<label class="input-label">
+
+TO DATE
+
+</label>
+
+<input type="date"
+id="toDate"
+class="date-input">
+
+</div>
+
+<button class="generate-btn"
+onclick="generateReports()">
+
+📄 Generate Reports
+
+</button>
+
+</div>
+
+<div class="loading"
+id="loading">
+
+Generating Reports...
+
+</div>
+
+<div class="results"
+id="results">
+
+</div>
+
+<div class="footer">
+
+Indian Railway Work Report System
+
+<br>
+
+App Created By Gobind Sharma
+
+</div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+
+const SHEET_URL =
+'https://docs.google.com/spreadsheets/d/1OP1z06rCpFMTRiAwncFIWuHK_rB2y0acy3KDVDnZGvA/export?format=csv&gid=0';
+
+let sectionData = {};
+
+function showToast(message,type='success'){
+
+const toast =
+document.getElementById('toast');
+
+toast.innerHTML =
+message;
+
+toast.style.background =
+type === 'success'
+?
+'linear-gradient(135deg,#059669,#10b981)'
+:
+'linear-gradient(135deg,#dc2626,#ef4444)';
+
+toast.style.display =
+'block';
+
+setTimeout(()=>{
+
+toast.style.display =
+'none';
+
+},3000);
+
+}
+
+async function fetchSheetData(){
+
+const response =
+await fetch(SHEET_URL);
+
+const csv =
+await response.text();
+
+const lines =
+csv.split('\n');
+
+const data = [];
+
+for(let i=1;i<lines.length;i++){
+
+const row =
+lines[i].split(',');
+
+if(row.length >= 5){
+
+data.push({
+
+date:
+row[0]
+.replace(/"/g,'')
+.trim(),
+
+section:
+row[1]
+.replace(/"/g,'')
+.trim(),
+
+item:
+row[2]
+.replace(/"/g,'')
+.trim(),
+
+quantity:
+Number(
+row[3]
+.replace(/"/g,'')
+.trim()
+),
+
+thickness:
+row[4]
+.replace(/"/g,'')
+.trim()
+
+});
+
+}
+
+}
+
+return data;
+
+}
+
+async function generateReports(){
+
+const fromDate =
+document.getElementById(
+'fromDate'
+).value;
+
+const toDate =
+document.getElementById(
+'toDate'
+).value;
+
+if(!fromDate || !toDate){
+
+showToast(
+'Select Date Range',
+'error'
+);
+
+return;
+
+}
+
+document.getElementById(
+'loading'
+).style.display='block';
+
+document.getElementById(
+'results'
+).innerHTML='';
+
+const rows =
+await fetchSheetData();
+
+const from =
+new Date(fromDate);
+
+const to =
+new Date(toDate);
+
+to.setHours(
+23,59,59,999
+);
+
+sectionData = {};
+
+rows.forEach(row=>{
+
+if(!row.date) return;
+
+const parts =
+row.date.split('/');
+
+if(parts.length !== 3)
+return;
+
+const rowDate =
+new Date(
+
+Number(parts[2]),
+
+Number(parts[1])-1,
+
+Number(parts[0])
+
+);
+
+if(
+rowDate >= from &&
+rowDate <= to
+){
+
+if(
+!sectionData[
+row.section
+]
+){
+
+sectionData[
+row.section
+]=[];
+
+}
+
+sectionData[
+row.section
+].push({
+
+...row,
+
+rowDate
+
+});
+
+}
+
+});
+
+renderCards();
+
+document.getElementById(
+'loading'
+).style.display='none';
+
+if(
+Object.keys(sectionData)
+.length === 0
+){
+
+showToast(
+'No Record Found',
+'error'
+);
+
+}
+
+else{
+
+showToast(
+'Reports Generated Successfully'
+);
+
+}
+
+}
+
+function renderCards(){
+
+const results =
+document.getElementById(
+'results'
+);
+
+results.innerHTML='';
+
+let count = 1;
+
+Object.keys(sectionData)
+.forEach(section=>{
+
+const rows =
+sectionData[section];
+
+let totalQty = 0;
+
+rows.forEach(r=>{
+
+totalQty +=
+Number(r.quantity);
+
+});
+
+const uniqueItems =
+[...new Set(
+rows.map(r=>r.item)
+)];
+
+const uniqueThickness =
+[...new Set(
+rows.map(r=>r.thickness)
+)];
+
+const summaryMap = {};
+
+rows.forEach(r=>{
+
+const key =
+r.item + '|' +
+r.thickness;
+
+if(!summaryMap[key]){
+
+summaryMap[key]=0;
+
+}
+
+summaryMap[key] +=
+Number(r.quantity);
+
+});
+
+let allItemsHTML = '';
+
+Object.keys(summaryMap)
+.forEach(key=>{
+
+const parts =
+key.split('|');
+
+allItemsHTML += `
+
+<div class="all-item">
+
+<div>
+
+${parts[0]}
+<br>
+<small>
+${parts[1]}
+</small>
+
+</div>
+
+<div>
+
+<b>
+${summaryMap[key]}
+</b>
+
+</div>
+
+</div>
+
+`;
+
+});
+
+const card =
+document.createElement('div');
+
+card.className =
+'section-card';
+
+card.innerHTML = `
+
+<div class="section-top">
+
+<div class="section-name">
+
+<div class="section-badge">
+${count}
+</div>
+
+SECTION :
+${section}
+
+</div>
+
+</div>
+
+<div class="summary-cards">
+
+<div class="summary-box">
+
+<div class="summary-value">
+${rows.length}
+</div>
+
+<div class="summary-label">
+ENTRIES
+</div>
+
+</div>
+
+<div class="summary-box">
+
+<div class="summary-value">
+${totalQty}
+</div>
+
+<div class="summary-label">
+TOTAL QTY
+</div>
+
+</div>
+
+<div class="summary-box">
+
+<div class="summary-value">
+${uniqueItems.length}
+</div>
+
+<div class="summary-label">
+ITEMS
+</div>
+
+</div>
+
+<div class="summary-box">
+
+<div class="summary-value">
+${uniqueThickness.length}
+</div>
+
+<div class="summary-label">
+THICKNESS
+</div>
+
+</div>
+
+</div>
+
+<div class="all-section-card">
+
+<div class="all-section-title">
+
+📊 ALL SECTION SUMMARY
+
+</div>
+
+${allItemsHTML}
+
+</div>
+
+<div class="button-row">
+
+<button class="download-btn"
+onclick="downloadPDF('${section}')">
+
+⬇ DOWNLOAD
+
+</button>
+
+<button class="share-btn"
+onclick="sharePDF('${section}')">
+
+🔗 SHARE
+
+</button>
+
+</div>
+
+`;
+
+results.appendChild(card);
+
+count++;
+
+});
+
+}
+
+async function createPDF(section){
+
+const rows =
+sectionData[section];
+
+const { jsPDF } =
+window.jspdf;
+
+const doc =
+new jsPDF('p','mm','a4');
+
+const logo =
+new Image();
+
+logo.src =
+'logo.png';
+
+return new Promise(resolve=>{
+
+logo.onload = function(){
+
+doc.setFillColor(
+5,20,50
+);
+
+doc.rect(
+0,0,210,38,'F'
+);
+
+doc.addImage(
+logo,
+'PNG',
+10,
+7,
+20,
+20
+);
+
+doc.setTextColor(
+255,255,255
+);
+
+doc.setFontSize(26);
+
+doc.setFont(
+'helvetica',
+'bold'
+);
+
+doc.text(
+'SMS WORK REPORT',
+105,
+17,
+{align:'center'}
+);
+
+doc.setFontSize(11);
+
+doc.setTextColor(
+56,189,248
+);
+
+doc.text(
+'App Created By Gobind Sharma',
+105,
+26,
+{align:'center'}
+);
+
+doc.setFillColor(
+255,255,255
+);
+
+doc.roundedRect(
+145,
+8,
+55,
+24,
+4,
+4,
+'F'
+);
+
+doc.setTextColor(
+0,0,0
+);
+
+doc.setFontSize(9);
+
+doc.text(
+'SECTION : ' + section,
+150,
+16
+);
+
+doc.text(
+'REPORT GENERATED',
+150,
+23
+);
+
+const summaryMap = {};
+
+let totalQty = 0;
+
+rows.forEach(r=>{
+
+totalQty +=
+Number(r.quantity);
+
+const key =
+r.item + '|' +
+r.thickness;
+
+if(!summaryMap[key]){
+
+summaryMap[key]=0;
+
+}
+
+summaryMap[key] +=
+Number(r.quantity);
+
+});
+
+doc.setFillColor(
+240,245,255
+);
+
+doc.roundedRect(
+10,
+45,
+190,
+28,
+5,
+5,
+'F'
+);
+
+doc.setTextColor(
+37,99,235
+);
+
+doc.setFontSize(16);
+
+doc.text(
+'SUMMARY REPORT',
+14,
+55
+);
+
+doc.setFontSize(11);
+
+doc.setTextColor(
+0,0,0
+);
+
+doc.text(
+'Total Entries : ' +
+rows.length,
+14,
+65
+);
+
+doc.text(
+'Total Quantity : ' +
+totalQty,
+70,
+65
+);
+
+doc.text(
+'Items : ' +
+Object.keys(summaryMap).length,
+140,
+65
+);
+
+const summaryRows = [];
+
+Object.keys(summaryMap)
+.forEach((key,index)=>{
+
+const parts =
+key.split('|');
+
+summaryRows.push([
+
+index+1,
+
+parts[0],
+
+parts[1],
+
+summaryMap[key]
+
+]);
+
+});
+
+doc.autoTable({
+
+startY:80,
+
+head:[[
+'SL',
+'ITEM',
+'THICKNESS',
+'TOTAL QTY'
+]],
+
+body:summaryRows,
+
+theme:'grid',
+
+headStyles:{
+fillColor:[37,99,235]
+},
+
+styles:{
+fontSize:9
+}
+
+});
+
+const detailRows =
+rows.map(r=>[
+
+r.date,
+
+r.item,
+
+r.thickness,
+
+r.quantity
+
+]);
+
+doc.autoTable({
+
+startY:
+doc.lastAutoTable.finalY + 12,
+
+head:[[
+'DATE',
+'ITEM',
+'THICKNESS',
+'QTY'
+]],
+
+body:detailRows,
+
+theme:'grid',
+
+headStyles:{
+fillColor:[79,70,229]
+},
+
+styles:{
+fontSize:9
+}
+
+});
+
+resolve(
+doc.output('blob')
+);
+
+};
+
+});
+
+}
+
+async function downloadPDF(section){
+
+const blob =
+await createPDF(section);
+
+const a =
+document.createElement('a');
+
+a.href =
+URL.createObjectURL(blob);
+
+a.download =
+section + '_Work_Report.pdf';
+
+a.click();
+
+}
+
+async function sharePDF(section){
+
+const blob =
+await createPDF(section);
+
+const file =
+new File(
+
+[blob],
+
+section + '_Work_Report.pdf',
+
+{
+type:'application/pdf'
+}
+
+);
+
+if(
+navigator.canShare &&
+navigator.canShare({files:[file]})
+){
+
+navigator.share({
+
+files:[file],
+
+title:
+section + ' Work Report'
+
+});
+
+}
+
+else{
+
+showToast(
+'Sharing Not Supported',
+'error'
+);
+
+}
+
+}
+
+</script>
+
+</body>
+
+</html>
