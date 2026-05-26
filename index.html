@@ -944,7 +944,6 @@ function createSectionPDF(doc, section, rows) {
     const toDate = formatDisplayDate(document.getElementById('toDate').value);
 
     // Track the start page for THIS specific section.
-    // This perfectly fixes the missing summary table issue on multi-section PDFs.
     const startPage = doc.internal.getCurrentPageInfo().pageNumber;
 
     // Sort rows consistently by Date
@@ -1005,10 +1004,15 @@ function createSectionPDF(doc, section, rows) {
         }
     });
 
-    // --- DRAW DETAIL TABLE (LEFT SIDE) ---
+    // --- DRAW DETAIL TABLE (TOP/FIRST) ---
+    doc.setTextColor(25, 35, 55);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detail Work Report', 14, 46);
+
     doc.autoTable({
         startY: 50,
-        margin: { top: 50, bottom: 15, left: 12, right: 151 }, 
+        margin: { top: 50, bottom: 15, left: 12, right: 12 }, 
         head: [['Date', 'Item Description', 'Thickness', 'Qty']],
         body: bodyRows.map(r => r.row),
         theme: 'grid',
@@ -1026,10 +1030,10 @@ function createSectionPDF(doc, section, rows) {
             halign: 'center'
         },
         columnStyles: {
-            0: { cellWidth: 28, halign: 'center', fontStyle: 'bold' },
-            1: { cellWidth: 67 },
-            2: { cellWidth: 25, halign: 'center' },
-            3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
+            0: { cellWidth: 35, halign: 'center', fontStyle: 'bold' },
+            1: { cellWidth: 91 },
+            2: { cellWidth: 35, halign: 'center' },
+            3: { cellWidth: 25, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
             if (data.section === 'body') {
@@ -1041,13 +1045,24 @@ function createSectionPDF(doc, section, rows) {
         }
     });
 
-    // --- DRAW SUMMARY TABLE (RIGHT SIDE) ---
-    // Safely reset back to the page where THIS section started
-    doc.setPage(startPage); 
+    // --- DRAW SUMMARY TABLE (BOTTOM/SECOND) ---
+    let finalY = doc.lastAutoTable.finalY;
+    const pageHeight = doc.internal.pageSize.height;
+
+    // Push to next page if there isn't enough room for the Summary Table Header
+    if (finalY > pageHeight - 40) {
+        doc.addPage();
+        finalY = 40; 
+    }
+
+    doc.setTextColor(25, 35, 55);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Item Summary', 14, finalY + 12);
 
     doc.autoTable({
-        startY: 50,
-        margin: { top: 50, bottom: 15, left: 162, right: 13 },
+        startY: finalY + 16,
+        margin: { top: 50, bottom: 15, left: 12, right: 12 },
         head: [['Item Description', 'Thickness', 'Total Qty']],
         body: summaryRows,
         theme: 'grid',
@@ -1065,9 +1080,9 @@ function createSectionPDF(doc, section, rows) {
             halign: 'center'
         },
         columnStyles: {
-            0: { cellWidth: 65 },
-            1: { cellWidth: 32, halign: 'center' },
-            2: { cellWidth: 25, halign: 'center', fontStyle: 'bold' }
+            0: { cellWidth: 101 },
+            1: { cellWidth: 45, halign: 'center' },
+            2: { cellWidth: 40, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
             if (data.section === 'body') {
@@ -1079,12 +1094,11 @@ function createSectionPDF(doc, section, rows) {
 
     // --- DRAW HEADERS AND FOOTERS (ON ALL PAGES FOR THIS SECTION) ---
     const endPage = doc.internal.getNumberOfPages();
-    const pageHeight = doc.internal.pageSize.height;
     
     for (let i = startPage; i <= endPage; i++) {
         doc.setPage(i);
         
-        // 1. Draw Linear Gradient Header Banner
+        // 1. Draw Linear Gradient Header Banner (Width updated to 210 for portrait)
         const headerHeight = 36;
         for (let y = 0; y <= headerHeight; y += 0.5) {
             // Gradient from Dark Blue (15,23,42) to Blue-Green (13,148,136)
@@ -1093,7 +1107,7 @@ function createSectionPDF(doc, section, rows) {
             let g = Math.round(23 + (148 - 23) * ratio);
             let b = Math.round(42 + (136 - 42) * ratio);
             doc.setFillColor(r, g, b);
-            doc.rect(0, y, 297, 0.6, 'F'); // 0.6 overlap prevents white lines
+            doc.rect(0, y, 210, 0.6, 'F'); // 210mm portrait width
         }
 
         // 2. Add Logo
@@ -1104,39 +1118,32 @@ function createSectionPDF(doc, section, rows) {
             }
         } catch(e) {}
 
-        // 3. Add Titles and Single Line Info
+        // 3. Add Titles and Single Line Info (Centered at X = 105 for portrait)
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
-        doc.text('SMS WORK REPORT', 148, 14, {align:'center'});
+        doc.text('SMS WORK REPORT', 105, 14, {align:'center'});
 
         doc.setFontSize(9);
         doc.setTextColor(220, 230, 240);
         doc.setFont('helvetica', 'normal');
-        doc.text('App Created By Gobind Sharma', 148, 20, {align:'center'});
+        doc.text('App Created By Gobind Sharma', 105, 20, {align:'center'});
 
         // Single line Section and Dates
-        doc.setFontSize(11);
+        doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(255, 255, 255);
         const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
-        doc.text(infoText, 148, 30, {align:'center'});
+        doc.text(infoText, 105, 30, {align:'center'});
 
-        // 4. Add Table Titles
-        doc.setTextColor(25, 35, 55);
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('Detail Work Report', 14, 46);
-        doc.text('Item Summary', 164, 46);
-
-        // 5. Add Footer
+        // 4. Add Footer (Centered at X = 105, Line to 200 for portrait)
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.5);
-        doc.line(10, pageHeight - 10, 287, pageHeight - 10);
+        doc.line(10, pageHeight - 10, 200, pageHeight - 10);
         doc.setFontSize(9);
         doc.setTextColor(120, 120, 120);
         doc.setFont('helvetica', 'normal');
-        doc.text('Indian Railway Work Report System', 148, pageHeight - 4, { align: 'center' });
+        doc.text('Indian Railway Work Report System', 105, pageHeight - 4, { align: 'center' });
     }
 }
 
@@ -1146,7 +1153,7 @@ async function createPDF(section){
     window.jspdf;
 
     const doc =
-    new jsPDF('landscape');
+    new jsPDF('portrait'); // Changed to portrait
 
     createSectionPDF(
         doc,
@@ -1217,7 +1224,7 @@ async function createAllPDF(){
     window.jspdf;
 
     const doc =
-    new jsPDF('landscape');
+    new jsPDF('portrait'); // Changed to portrait
 
     const sections =
     Object.keys(sectionData);
