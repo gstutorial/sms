@@ -1007,7 +1007,13 @@ function createSectionPDF(doc,section,rows){
 
         detailRows.push({
 
-            date:showDate ? r.date : '',
+            date:showDate
+? formatDisplayDate(
+
+    r.date.split('/').reverse().join('-')
+
+)
+: '',
 
             item:r.item,
 
@@ -1316,7 +1322,13 @@ function createSectionPDF(doc,section,rows){
 
     summaryRows.forEach(r=>{
 
-        if(summaryY > 176) return;
+        if(summaryY > 176){
+
+    doc.addPage();
+
+    summaryY = 20;
+
+}
 
         doc.setFillColor(255,255,255);
 
@@ -1337,16 +1349,16 @@ function createSectionPDF(doc,section,rows){
         doc.setFontSize(8);
 
         const itemText =
-        String(r[0]).substring(0,28);
+doc.splitTextToSize(
+String(r[0]),
+48
+);
 
         doc.text(
-
-            itemText,
-
-            191,
-            summaryY + 5
-
-        );
+itemText,
+191,
+summaryY + 5
+);
 
         doc.setTextColor(90,90,90);
 
