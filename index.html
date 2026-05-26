@@ -12,6 +12,12 @@ content="width=device-width, initial-scale=1.0">
 SMS Work Report Generator
 </title>
 
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Work Report">
+<link rel="apple-touch-icon" href="logo.png">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
@@ -473,6 +479,32 @@ body{
 
 }
 
+/* PWA Install Button Styles */
+.install-fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 800;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    cursor: pointer;
+    z-index: 1000;
+    display: none; /* Hidden until PWA criteria met */
+    align-items: center;
+    gap: 8px;
+    transition: 0.3s ease;
+}
+
+.install-fab:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+}
+
 @media(min-width:992px){
 
     .main-layout{
@@ -599,6 +631,10 @@ App Created By Gobind Sharma
 
 <div id="toast"></div>
 
+<button id="installAppBtn" class="install-fab">
+    📲 Install App
+</button>
+
 <script>
 
 const SHEET_URL =
@@ -718,14 +754,12 @@ async function generateReports(){
 
     }
 
-    // FIX: Parse HTML input dates locally instead of relying on UTC assumption
     const fParts = fromDateVal.split('-');
     const from = new Date(fParts[0], fParts[1] - 1, fParts[2]);
 
     const tParts = toDateVal.split('-');
     const to = new Date(tParts[0], tParts[1] - 1, tParts[2]);
     
-    // Set the "To Date" to the end of the day to capture everything
     to.setHours(23, 59, 59, 999);
 
     if(from > to){
@@ -756,7 +790,6 @@ async function generateReports(){
         const p =
         row.date.split('/');
 
-        // rowDate is parsed locally, matching our fixed from/to logic
         const rowDate =
         new Date(
             p[2],
@@ -1228,6 +1261,48 @@ async function shareAllPDF(){
         showToast('Sharing Not Supported');
     }
 
+}
+
+// ==========================================
+// PWA Installation Scripts
+// ==========================================
+
+let deferredPrompt;
+const installBtn = document.getElementById('installAppBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+    // Update UI notify the user they can install the PWA
+    installBtn.style.display = 'flex';
+});
+
+installBtn.addEventListener('click', async () => {
+    // Hide the app provided install promotion
+    installBtn.style.display = 'none';
+    // Show the install prompt
+    deferredPrompt.prompt();
+    // Wait for the user to respond to the prompt
+    const { outcome } = await deferredPrompt.userChoice;
+    // We've used the prompt, and can't use it again, throw it away
+    deferredPrompt = null;
+});
+
+window.addEventListener('appinstalled', () => {
+    // Clear the deferredPrompt so it can be garbage collected
+    deferredPrompt = null;
+    showToast('App Installed Successfully!');
+});
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+            console.log('SW registration failed:', err);
+        });
+    });
 }
 
 </script>
