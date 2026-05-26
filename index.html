@@ -1,0 +1,1284 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+SMS Work Report Generator
+</title>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<meta name="theme-color"
+content="#2563eb">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    font-family:
+    Arial,sans-serif;
+
+    background:
+    radial-gradient(
+    circle at top,
+    #1e3a8a 0%,
+    #0f172a 40%,
+    #020617 100%
+    );
+
+    min-height:100vh;
+
+    padding:10px;
+
+    color:white;
+
+}
+
+.container{
+
+    width:100%;
+
+    max-width:1500px;
+
+    margin:auto;
+
+    background:
+    linear-gradient(
+    135deg,
+    rgba(255,255,255,0.10),
+    rgba(255,255,255,0.04)
+    );
+
+    border-radius:30px;
+
+    padding:18px;
+
+    border:
+    1px solid rgba(255,255,255,0.10);
+
+    backdrop-filter:blur(20px);
+
+    box-shadow:
+    0 15px 50px rgba(0,0,0,0.45);
+
+}
+
+.logo{
+
+    width:82px;
+
+    height:82px;
+
+    object-fit:contain;
+
+    display:block;
+
+    margin:auto;
+
+}
+
+.title{
+
+    text-align:center;
+
+    font-size:30px;
+
+    font-weight:800;
+
+    margin-top:10px;
+
+}
+
+.subtitle{
+
+    text-align:center;
+
+    color:#cbd5e1;
+
+    margin-top:6px;
+
+    margin-bottom:18px;
+
+    font-size:14px;
+
+}
+
+.main-layout{
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:18px;
+
+}
+
+.left-panel{
+
+    width:100%;
+
+}
+
+.right-panel{
+
+    width:100%;
+
+}
+
+.filter-box{
+
+    background:
+    rgba(255,255,255,0.06);
+
+    border-radius:24px;
+
+    padding:18px;
+
+    border:
+    1px solid rgba(255,255,255,0.08);
+
+}
+
+.input-group{
+
+    margin-bottom:12px;
+
+}
+
+.input-label{
+
+    display:block;
+
+    margin-bottom:7px;
+
+    font-size:13px;
+
+    font-weight:700;
+
+}
+
+.date-input{
+
+    width:100%;
+
+    padding:13px;
+
+    border:none;
+
+    border-radius:15px;
+
+    background:white;
+
+    font-size:14px;
+
+    font-weight:700;
+
+    cursor:pointer;
+
+}
+
+.generate-btn{
+
+    width:100%;
+
+    border:none;
+
+    border-radius:16px;
+
+    padding:15px;
+
+    background:
+    linear-gradient(
+    135deg,
+    #2563eb,
+    #06b6d4
+    );
+
+    color:white;
+
+    font-size:16px;
+
+    font-weight:800;
+
+    cursor:pointer;
+
+    margin-top:8px;
+
+}
+
+.loading{
+
+    display:none;
+
+    text-align:center;
+
+    margin-top:15px;
+
+    font-size:15px;
+
+    font-weight:700;
+
+}
+
+.results{
+
+    display:grid;
+
+    grid-template-columns:1fr;
+
+    gap:14px;
+
+}
+
+.section-card{
+
+    background:
+    linear-gradient(
+    135deg,
+    rgba(255,255,255,0.10),
+    rgba(255,255,255,0.05)
+    );
+
+    border-radius:22px;
+
+    padding:14px;
+
+    border:
+    1px solid rgba(255,255,255,0.10);
+
+    transition:0.3s ease;
+
+}
+
+.section-card:hover{
+
+    transform:translateY(-4px);
+
+}
+
+.section-header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:10px;
+
+    margin-bottom:12px;
+
+}
+
+.section-icon{
+
+    width:44px;
+
+    height:44px;
+
+    border-radius:50%;
+
+    background:
+    linear-gradient(
+    135deg,
+    #2563eb,
+    #38bdf8
+    );
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:18px;
+
+}
+
+.section-name{
+
+    font-size:18px;
+
+    font-weight:800;
+
+}
+
+.summary-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr 1fr;
+
+    gap:8px;
+
+    margin-bottom:12px;
+
+}
+
+.summary-box{
+
+    background:
+    rgba(255,255,255,0.08);
+
+    border-radius:14px;
+
+    padding:10px;
+
+    text-align:center;
+
+}
+
+.summary-number{
+
+    font-size:18px;
+
+    font-weight:900;
+
+    color:#38bdf8;
+
+}
+
+.summary-label{
+
+    font-size:10px;
+
+    color:#cbd5e1;
+
+    margin-top:2px;
+
+}
+
+.button-row{
+
+    display:flex;
+
+    gap:8px;
+
+}
+
+.download-btn,
+.share-btn{
+
+    flex:1;
+
+    border:none;
+
+    border-radius:12px;
+
+    padding:11px;
+
+    color:white;
+
+    font-size:13px;
+
+    font-weight:800;
+
+    cursor:pointer;
+
+}
+
+.download-btn{
+
+    background:
+    linear-gradient(
+    135deg,
+    #16a34a,
+    #22c55e
+    );
+
+}
+
+.share-btn{
+
+    background:
+    linear-gradient(
+    135deg,
+    #2563eb,
+    #38bdf8
+    );
+
+}
+
+.all-card{
+
+    background:
+    linear-gradient(
+    135deg,
+    #7c3aed,
+    #2563eb
+    );
+
+}
+
+.footer{
+
+    text-align:center;
+
+    margin-top:22px;
+
+    color:#cbd5e1;
+
+    font-size:12px;
+
+    line-height:1.6;
+
+}
+
+#toast{
+
+    position:fixed;
+
+    top:20px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    background:#111827;
+
+    padding:14px 20px;
+
+    border-radius:16px;
+
+    color:white;
+
+    font-weight:700;
+
+    z-index:9999;
+
+    display:none;
+
+}
+
+@media(min-width:992px){
+
+    .main-layout{
+
+        display:grid;
+
+        grid-template-columns:370px 1fr;
+
+        gap:22px;
+
+        align-items:start;
+
+    }
+
+    .left-panel{
+
+        position:sticky;
+
+        top:18px;
+
+    }
+
+    .results{
+
+        grid-template-columns:1fr 1fr;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="logo.png"
+class="logo">
+
+<div class="title">
+SMS Work Report Generator
+</div>
+
+<div class="subtitle">
+Generate Section Wise Work Reports
+</div>
+
+<div class="main-layout">
+
+<div class="left-panel">
+
+<div class="filter-box">
+
+<div class="input-group">
+
+<label class="input-label">
+From Date
+</label>
+
+<input
+type="date"
+id="fromDate"
+class="date-input"
+onclick="this.showPicker()">
+
+</div>
+
+<div class="input-group">
+
+<label class="input-label">
+To Date
+</label>
+
+<input
+type="date"
+id="toDate"
+class="date-input"
+onclick="this.showPicker()">
+
+</div>
+
+<button class="generate-btn"
+onclick="generateReports()">
+
+📄 Generate Reports
+
+</button>
+
+</div>
+
+<div class="loading"
+id="loading">
+
+Fetching Google Sheet Data...
+
+</div>
+
+</div>
+
+<div class="right-panel">
+
+<div class="results"
+id="results">
+
+</div>
+
+</div>
+
+</div>
+
+<div class="footer">
+
+Indian Railway Work Report System
+
+<br>
+
+App Created By Gobind Sharma
+
+</div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+
+const SHEET_URL =
+'https://docs.google.com/spreadsheets/d/1OP1z06rCpFMTRiAwncFIWuHK_rB2y0acy3KDVDnZGvA/export?format=csv&gid=0';
+
+let sectionData = {};
+
+function showToast(message){
+
+    const toast =
+    document.getElementById('toast');
+
+    toast.innerHTML = message;
+
+    toast.style.display='block';
+
+    clearTimeout(window.toastTimer);
+
+    window.toastTimer =
+    setTimeout(()=>{
+
+        toast.style.display='none';
+
+    },3000);
+
+}
+
+async function fetchSheetData(){
+
+    const response =
+    await fetch(SHEET_URL);
+
+    const csv =
+    await response.text();
+
+    const lines =
+    csv.split('\n');
+
+    const data = [];
+
+    for(let i=1;i<lines.length;i++){
+
+        const row =
+        lines[i].split(',');
+
+        if(row.length >= 5){
+
+            data.push({
+
+                date:
+                row[0].replace(/"/g,'').trim(),
+
+                section:
+                row[1].replace(/"/g,'').trim(),
+
+                item:
+                row[2].replace(/"/g,'').trim(),
+
+                quantity:
+                Number(row[3].replace(/"/g,'').trim()),
+
+                thickness:
+                row[4].replace(/"/g,'').trim()
+
+            });
+
+        }
+
+    }
+
+    return data;
+
+}
+
+async function generateReports(){
+
+    const fromDate =
+    document.getElementById('fromDate').value;
+
+    const toDate =
+    document.getElementById('toDate').value;
+
+    if(!fromDate || !toDate){
+
+        showToast(
+        'Please Select Date Range'
+        );
+
+        return;
+
+    }
+
+    const from =
+    new Date(fromDate);
+
+    const to =
+    new Date(toDate);
+
+    if(from > to){
+
+        showToast(
+        'From Date Must Be Smaller'
+        );
+
+        return;
+
+    }
+
+    document.getElementById('loading')
+    .style.display='block';
+
+    document.getElementById('results')
+    .innerHTML='';
+
+    const rows =
+    await fetchSheetData();
+
+    to.setHours(23,59,59,999);
+
+    sectionData = {};
+
+    rows.forEach(row=>{
+
+        if(!row.date) return;
+
+        const p =
+        row.date.split('/');
+
+        const rowDate =
+        new Date(
+            p[2],
+            p[1]-1,
+            p[0]
+        );
+
+        if(rowDate >= from && rowDate <= to){
+
+            if(!sectionData[row.section]){
+
+                sectionData[row.section]=[];
+
+            }
+
+            sectionData[row.section]
+            .push(row);
+
+        }
+
+    });
+
+    renderCards();
+
+    document.getElementById('loading')
+    .style.display='none';
+
+}
+
+function renderCards(){
+
+    const container =
+    document.getElementById('results');
+
+    container.innerHTML='';
+
+    const allCard =
+    document.createElement('div');
+
+    allCard.className =
+    'section-card all-card';
+
+    allCard.innerHTML = `
+
+    <div class="section-header">
+
+        <div class="section-icon">
+        📚
+        </div>
+
+        <div class="section-name">
+        ALL SECTIONS
+        </div>
+
+    </div>
+
+    <div class="button-row">
+
+        <button class="download-btn"
+        onclick="downloadAllPDF()">
+
+        ⬇ Download
+
+        </button>
+
+        <button class="share-btn"
+        onclick="shareAllPDF()">
+
+        🔗 Share
+
+        </button>
+
+    </div>
+
+    `;
+
+    container.appendChild(allCard);
+
+    Object.keys(sectionData).forEach(section=>{
+
+        const rows =
+        sectionData[section];
+
+        let totalQty = 0;
+
+        rows.forEach(r=>{
+
+            totalQty += Number(r.quantity);
+
+        });
+
+        const uniqueItems =
+        [...new Set(rows.map(r=>r.item))];
+
+        const card =
+        document.createElement('div');
+
+        card.className =
+        'section-card';
+
+        card.innerHTML = `
+
+        <div class="section-header">
+
+            <div class="section-icon">
+            📋
+            </div>
+
+            <div class="section-name">
+            ${section}
+            </div>
+
+        </div>
+
+        <div class="summary-grid">
+
+            <div class="summary-box">
+
+                <div class="summary-number">
+                ${rows.length}
+                </div>
+
+                <div class="summary-label">
+                Entries
+                </div>
+
+            </div>
+
+            <div class="summary-box">
+
+                <div class="summary-number">
+                ${totalQty}
+                </div>
+
+                <div class="summary-label">
+                Qty
+                </div>
+
+            </div>
+
+            <div class="summary-box">
+
+                <div class="summary-number">
+                ${uniqueItems.length}
+                </div>
+
+                <div class="summary-label">
+                Items
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="button-row">
+
+            <button class="download-btn"
+            onclick="downloadPDF('${section}')">
+
+            ⬇ Download
+
+            </button>
+
+            <button class="share-btn"
+            onclick="sharePDF('${section}')">
+
+            🔗 Share
+
+            </button>
+
+        </div>
+
+        `;
+
+        container.appendChild(card);
+
+    });
+
+}
+
+function createSectionPDF(doc,section,rows){
+
+    const fromDate =
+    document.getElementById('fromDate').value;
+
+    const toDate =
+    document.getElementById('toDate').value;
+
+    rows.sort((a,b)=>{
+
+        const pa = a.date.split('/');
+        const pb = b.date.split('/');
+
+        return new Date(pa[2],pa[1]-1,pa[0]) -
+        new Date(pb[2],pb[1]-1,pb[0]);
+
+    });
+
+    const summary = {};
+
+    rows.forEach(r=>{
+
+        const key =
+        r.item + '|' + r.thickness;
+
+        if(!summary[key]){
+
+            summary[key]=0;
+
+        }
+
+        summary[key] += Number(r.quantity);
+
+    });
+
+    const summaryRows =
+    Object.keys(summary)
+    .map(key=>{
+
+        const p =
+        key.split('|');
+
+        return [
+
+            p[0],
+            p[1],
+            summary[key]
+
+        ];
+
+    });
+
+    const detailRows = [];
+
+    let lastDate='';
+
+    rows.forEach(r=>{
+
+        let dateText='';
+
+        if(r.date !== lastDate){
+
+            dateText = r.date;
+
+            lastDate = r.date;
+
+        }
+
+        detailRows.push([
+
+            dateText,
+            r.item,
+            r.thickness,
+            r.quantity
+
+        ]);
+
+    });
+
+    doc.setFillColor(15,23,42);
+
+    doc.rect(0,0,297,35,'F');
+
+    doc.setTextColor(255,255,255);
+
+    doc.setFontSize(24);
+
+    doc.text(
+    'SMS WORK REPORT',
+    148,
+    15,
+    {align:'center'}
+    );
+
+    doc.setFontSize(10);
+
+    doc.text(
+    'App Created By Gobind Sharma',
+    148,
+    23,
+    {align:'center'}
+    );
+
+    doc.setFillColor(255,255,255);
+
+    doc.roundedRect(10,42,90,22,4,4,'F');
+
+    doc.roundedRect(105,42,85,22,4,4,'F');
+
+    doc.roundedRect(195,42,92,22,4,4,'F');
+
+    doc.setTextColor(120,120,120);
+
+    doc.setFontSize(9);
+
+    doc.text('SECTION',16,49);
+
+    doc.text('FROM DATE',111,49);
+
+    doc.text('TO DATE',201,49);
+
+    doc.setFontSize(14);
+
+    doc.setTextColor(0,0,0);
+
+    doc.text(section,16,58);
+
+    doc.text(fromDate,111,58);
+
+    doc.text(toDate,201,58);
+
+    doc.setFillColor(248,250,252);
+
+    doc.roundedRect(8,72,168,125,6,6,'F');
+
+    doc.roundedRect(182,72,107,125,6,6,'F');
+
+    doc.setTextColor(30,41,59);
+
+    doc.setFontSize(14);
+
+    doc.text('Detail Work Report',14,82);
+
+    doc.text('Item Summary',188,82);
+
+    doc.autoTable({
+
+        startY:88,
+
+        margin:{left:12},
+
+        tableWidth:160,
+
+        head:[[
+            'Date',
+            'Item',
+            'Thickness',
+            'Qty'
+        ]],
+
+        body:detailRows,
+
+        styles:{
+
+            fontSize:9,
+
+            cellPadding:3,
+
+            valign:'middle'
+
+        },
+
+        alternateRowStyles:{
+
+            fillColor:[245,247,250]
+
+        },
+
+        headStyles:{
+
+            fillColor:[37,99,235]
+
+        }
+
+    });
+
+    doc.autoTable({
+
+        startY:88,
+
+        margin:{left:186},
+
+        tableWidth:98,
+
+        head:[[
+            'Item',
+            'Thk',
+            'Qty'
+        ]],
+
+        body:summaryRows,
+
+        styles:{
+
+            fontSize:9,
+
+            cellPadding:3
+
+        },
+
+        alternateRowStyles:{
+
+            fillColor:[245,247,250]
+
+        },
+
+        headStyles:{
+
+            fillColor:[124,58,237]
+
+        }
+
+    });
+
+}
+
+async function createPDF(section){
+
+    const { jsPDF } =
+    window.jspdf;
+
+    const doc =
+    new jsPDF('landscape');
+
+    createSectionPDF(
+        doc,
+        section,
+        sectionData[section]
+    );
+
+    return doc.output('blob');
+
+}
+
+async function downloadPDF(section){
+
+    const blob =
+    await createPDF(section);
+
+    const a =
+    document.createElement('a');
+
+    a.href =
+    URL.createObjectURL(blob);
+
+    a.download =
+    section + '.pdf';
+
+    a.click();
+
+}
+
+async function sharePDF(section){
+
+    const blob =
+    await createPDF(section);
+
+    const file =
+    new File(
+        [blob],
+        section + '.pdf',
+        {
+            type:'application/pdf'
+        }
+    );
+
+    if(navigator.canShare &&
+    navigator.canShare({files:[file]})){
+
+        await navigator.share({
+
+            files:[file]
+
+        });
+
+    }
+
+    else{
+
+        showToast(
+        'Sharing Not Supported'
+        );
+
+    }
+
+}
+
+async function createAllPDF(){
+
+    const { jsPDF } =
+    window.jspdf;
+
+    const doc =
+    new jsPDF('landscape');
+
+    const sections =
+    Object.keys(sectionData);
+
+    sections.forEach((section,index)=>{
+
+        if(index !== 0){
+
+            doc.addPage();
+
+        }
+
+        createSectionPDF(
+            doc,
+            section,
+            sectionData[section]
+        );
+
+    });
+
+    return doc.output('blob');
+
+}
+
+async function downloadAllPDF(){
+
+    const blob =
+    await createAllPDF();
+
+    const a =
+    document.createElement('a');
+
+    a.href =
+    URL.createObjectURL(blob);
+
+    a.download =
+    'All Sections Report.pdf';
+
+    a.click();
+
+}
+
+async function shareAllPDF(){
+
+    const blob =
+    await createAllPDF();
+
+    const file =
+    new File(
+        [blob],
+        'All Sections Report.pdf',
+        {
+            type:'application/pdf'
+        }
+    );
+
+    if(navigator.canShare &&
+    navigator.canShare({files:[file]})){
+
+        await navigator.share({
+
+            files:[file]
+
+        });
+
+    }
+
+    else{
+
+        showToast(
+        'Sharing Not Supported'
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+
+</html>
