@@ -942,18 +942,14 @@ function createSectionPDF(doc, section, rows) {
 
     const fromDate = formatDisplayDate(document.getElementById('fromDate').value);
     const toDate = formatDisplayDate(document.getElementById('toDate').value);
-
-    // Track the start page for THIS specific section.
     const startPage = doc.internal.getCurrentPageInfo().pageNumber;
 
-    // Sort rows consistently by Date
     rows.sort((a,b)=>{
         const pa = a.date.split('/');
         const pb = b.date.split('/');
         return new Date(pa[2],pa[1]-1,pa[0]) - new Date(pb[2],pb[1]-1,pb[0]);
     });
 
-    // 1. Prepare Summary Table Data
     const summary = {};
     rows.forEach(r => {
         const key = r.item + '|' + r.thickness;
@@ -966,7 +962,6 @@ function createSectionPDF(doc, section, rows) {
         return [p[0], p[1], summary[key]];
     });
 
-    // 2. Prepare Detail Table Data
     const dateCounts = {};
     rows.forEach(r => {
         dateCounts[r.date] = (dateCounts[r.date] || 0) + 1;
@@ -1003,18 +998,18 @@ function createSectionPDF(doc, section, rows) {
         }
     });
 
-    // Add Table Titles (Reduced font size to fit portrait side-by-side cleanly)
+    // Add Table Titles aligned with exact 3mm / 126mm margins
     doc.setTextColor(25, 35, 55);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('Detail Work Report', 10, 46);
-    doc.text('Item Summary', 125, 46);
+    doc.text('Detail Work Report', 3, 46);
+    doc.text('Item Summary', 126, 46);
 
     // --- DRAW DETAIL TABLE (LEFT SIDE) ---
     doc.autoTable({
         startY: 48,
-        // Portrait width is 210. Left margin 10, right margin 90 leaves exactly 110mm for Left Table.
-        margin: { top: 48, bottom: 15, left: 10, right: 90 }, 
+        // Exactly 3mm left, 87mm right (leaving 120mm width for table)
+        margin: { top: 48, bottom: 15, left: 3, right: 87 }, 
         head: [['Date', 'Description', 'Thick.', 'Qty']],
         body: bodyRows.map(r => r.row),
         theme: 'grid',
@@ -1032,13 +1027,13 @@ function createSectionPDF(doc, section, rows) {
         },
         columnStyles: {
             0: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
-            1: { cellWidth: 56 },
+            1: { cellWidth: 65 }, // Expanded proportionately
             2: { cellWidth: 18, halign: 'center' },
-            3: { cellWidth: 14, halign: 'center', fontStyle: 'bold' }
+            3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
             if (data.section === 'head') {
-                data.cell.styles.fillColor = null; // Let willDrawCell paint the gradient
+                data.cell.styles.fillColor = null; 
             }
             if (data.section === 'body') {
                 const rowData = bodyRows[data.row.index];
@@ -1052,9 +1047,9 @@ function createSectionPDF(doc, section, rows) {
                 const { x, y, width, height } = data.cell;
                 for (let i = 0; i <= height; i += 0.5) {
                     let ratio = i / height;
-                    let r = Math.round(15 + (30 - 15) * ratio); // 15 to 30
-                    let g = Math.round(23 + (58 - 23) * ratio); // 23 to 58
-                    let b = Math.round(42 + (138 - 42) * ratio); // 42 to 138
+                    let r = Math.round(15 + (30 - 15) * ratio); 
+                    let g = Math.round(23 + (58 - 23) * ratio); 
+                    let b = Math.round(42 + (138 - 42) * ratio); 
                     doc.setFillColor(r, g, b);
                     doc.rect(x, y + i, width, 0.6, 'F');
                 }
@@ -1068,8 +1063,8 @@ function createSectionPDF(doc, section, rows) {
 
     doc.autoTable({
         startY: 48,
-        // Start left at 125. Right margin 10. Leaves exactly 75mm for Right Table.
-        margin: { top: 48, bottom: 15, left: 125, right: 10 },
+        // Exactly 126mm left (120mm left table + 3mm left margin + 3mm gap), 3mm right (leaves 81mm width)
+        margin: { top: 48, bottom: 15, left: 126, right: 3 },
         head: [['Item Description', 'Thick.', 'Total Qty']],
         body: summaryRows,
         theme: 'grid',
@@ -1086,13 +1081,13 @@ function createSectionPDF(doc, section, rows) {
             halign: 'center'
         },
         columnStyles: {
-            0: { cellWidth: 42 },
+            0: { cellWidth: 46 }, // Expanded proportionately
             1: { cellWidth: 18, halign: 'center' },
-            2: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
+            2: { cellWidth: 17, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
             if (data.section === 'head') {
-                data.cell.styles.fillColor = null; // Let willDrawCell paint the gradient
+                data.cell.styles.fillColor = null; 
             }
             if (data.section === 'body') {
                 const bgColor = data.row.index % 2 === 0 ? [255, 255, 255] : [240, 248, 245]; 
@@ -1105,9 +1100,9 @@ function createSectionPDF(doc, section, rows) {
                 const { x, y, width, height } = data.cell;
                 for (let i = 0; i <= height; i += 0.5) {
                     let ratio = i / height;
-                    let r = Math.round(2 + (4 - 2) * ratio);    // 2 to 4
-                    let g = Math.round(44 + (120 - 44) * ratio);  // 44 to 120
-                    let b = Math.round(34 + (87 - 34) * ratio);   // 34 to 87
+                    let r = Math.round(2 + (4 - 2) * ratio);   
+                    let g = Math.round(44 + (120 - 44) * ratio); 
+                    let b = Math.round(34 + (87 - 34) * ratio);  
                     doc.setFillColor(r, g, b);
                     doc.rect(x, y + i, width, 0.6, 'F');
                 }
@@ -1133,11 +1128,11 @@ function createSectionPDF(doc, section, rows) {
             doc.rect(0, y, 210, 0.6, 'F'); 
         }
 
-        // 2. Add Logo
+        // 2. Add Logo (Aligned to 3mm left margin)
         try {
             const img = document.querySelector('.logo');
             if(img) {
-                doc.addImage(img, 'PNG', 12, 4, 28, 28);
+                doc.addImage(img, 'PNG', 3, 4, 28, 28);
             }
         } catch(e) {}
 
@@ -1159,10 +1154,10 @@ function createSectionPDF(doc, section, rows) {
         const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
         doc.text(infoText, 105, 30, {align:'center'});
 
-        // 4. Add Footer
+        // 4. Add Footer (3mm on both sides -> 3 to 207)
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.5);
-        doc.line(10, pageHeight - 10, 200, pageHeight - 10);
+        doc.line(3, pageHeight - 10, 207, pageHeight - 10);
         doc.setFontSize(9);
         doc.setTextColor(120, 120, 120);
         doc.setFont('helvetica', 'normal');
