@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+SMS Work Report Generator
+</title>
+
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<meta name="theme-color"
+content="#2563eb">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+
+    font-family:
+    Arial,sans-serif;
+
+    background:
+    radial-gradient(
+    circle at top,
+    #1e3a8a 0%,
+    #0f172a 40%,
+    #020617 100%
+    );
+
+    min-height:100vh;
+
+    padding:10px;
+
+    color:white;
+
+}
+
+.container{
+
+    max-width:700px;
+
+    margin:auto;
+
+    background:
+    linear-gradient(
+    135deg,
+    rgba(255,255,255,0.10),
+    rgba(255,255,255,0.04)
+    );
+
+    border-radius:28px;
+
+    padding:18px;
+
+    border:
+    1px solid rgba(255,255,255,0.10);
+
+    backdrop-filter:blur(20px);
+
+    box-shadow:
+    0 15px 50px rgba(0,0,0,0.45);
+
+}
+
+.logo{
+
+    width:90px;
+
+    height:90px;
+
+    object-fit:contain;
+
+    display:block;
+
+    margin:auto;
+
+    border-radius:50%;
+
+    box-shadow:
+    0 10px 30px rgba(0,0,0,0.40);
+
+}
+
+.title{
+
+    text-align:center;
+
+    font-size:28px;
+
+    font-weight:800;
+
+    margin-top:10px;
+
+    line-height:1.15;
+
+}
+
+.subtitle{
+
+    text-align:center;
+
+    color:#cbd5e1;
+
+    margin-top:8px;
+
+    margin-bottom:18px;
+
+    font-size:14px;
+
+}
+
+.filter-box{
+
+    background:
+    rgba(255,255,255,0.06);
+
+    border-radius:22px;
+
+    padding:16px;
+
+}
+
+.input-group{
+
+    margin-bottom:14px;
+
+}
+
+.input-label{
+
+    display:block;
+
+    margin-bottom:8px;
+
+    font-size:14px;
+
+    font-weight:bold;
+
+}
+
+.date-input{
+
+    width:100%;
+
+    padding:14px;
+
+    border:none;
+
+    border-radius:16px;
+
+    background:white;
+
+    font-size:15px;
+
+    font-weight:600;
+
+}
+
+.generate-btn{
+
+    width:100%;
+
+    border:none;
+
+    border-radius:18px;
+
+    padding:15px;
+
+    background:
+    linear-gradient(
+    135deg,
+    #2563eb,
+    #06b6d4
+    );
+
+    color:white;
+
+    font-size:18px;
+
+    font-weight:800;
+
+    cursor:pointer;
+
+    box-shadow:
+    0 10px 25px rgba(37,99,235,0.35);
+
+}
+
+.loading{
+
+    display:none;
+
+    text-align:center;
+
+    margin-top:16px;
+
+    font-size:17px;
+
+    font-weight:700;
+
+}
+
+.results{
+
+    margin-top:14px;
+
+    display:flex;
+
+    flex-direction:column;
+
+    gap:12px;
+
+}
+
+.section-card{
+
+    background:
+    linear-gradient(
+    135deg,
+    rgba(255,255,255,0.10),
+    rgba(255,255,255,0.05)
+    );
+
+    border-radius:22px;
+
+    padding:16px;
+
+    border:
+    1px solid rgba(255,255,255,0.10);
+
+    box-shadow:
+    0 8px 25px rgba(0,0,0,0.20);
+
+}
+
+.section-header{
+
+    display:flex;
+
+    align-items:center;
+
+    gap:12px;
+
+    margin-bottom:12px;
+
+}
+
+.section-icon{
+
+    width:52px;
+
+    height:52px;
+
+    border-radius:50%;
+
+    background:
+    linear-gradient(
+    135deg,
+    #2563eb,
+    #38bdf8
+    );
+
+    display:flex;
+
+    align-items:center;
+
+    justify-content:center;
+
+    font-size:22px;
+
+    font-weight:bold;
+
+}
+
+.section-name{
+
+    font-size:20px;
+
+    font-weight:800;
+
+}
+
+.summary-grid{
+
+    display:grid;
+
+    grid-template-columns:1fr 1fr 1fr;
+
+    gap:10px;
+
+    margin-bottom:14px;
+
+}
+
+.summary-box{
+
+    background:
+    rgba(255,255,255,0.08);
+
+    border-radius:16px;
+
+    padding:12px;
+
+    text-align:center;
+
+}
+
+.summary-number{
+
+    font-size:24px;
+
+    font-weight:900;
+
+    color:#38bdf8;
+
+    margin-bottom:4px;
+
+}
+
+.summary-label{
+
+    font-size:11px;
+
+    color:#cbd5e1;
+
+}
+
+.button-row{
+
+    display:flex;
+
+    gap:10px;
+
+}
+
+.download-btn{
+
+    flex:1;
+
+    border:none;
+
+    border-radius:14px;
+
+    padding:13px;
+
+    background:
+    linear-gradient(
+    135deg,
+    #16a34a,
+    #22c55e
+    );
+
+    color:white;
+
+    font-size:15px;
+
+    font-weight:800;
+
+    cursor:pointer;
+
+}
+
+.share-btn{
+
+    width:110px;
+
+    border:none;
+
+    border-radius:14px;
+
+    background:
+    linear-gradient(
+    135deg,
+    #2563eb,
+    #38bdf8
+    );
+
+    color:white;
+
+    font-size:15px;
+
+    font-weight:800;
+
+    cursor:pointer;
+
+}
+
+.footer{
+
+    text-align:center;
+
+    margin-top:20px;
+
+    color:#cbd5e1;
+
+    font-size:12px;
+
+    line-height:1.6;
+
+}
+
+#toast{
+
+    position:fixed;
+
+    top:20px;
+
+    left:50%;
+
+    transform:translateX(-50%);
+
+    background:
+    linear-gradient(
+    135deg,
+    #111827,
+    #1f2937
+    );
+
+    padding:14px 20px;
+
+    border-radius:18px;
+
+    color:white;
+
+    font-weight:700;
+
+    z-index:9999;
+
+    display:none;
+
+    min-width:260px;
+
+    text-align:center;
+
+    box-shadow:
+    0 10px 35px rgba(0,0,0,0.40);
+
+}
+
+@media(max-width:600px){
+
+    .title{
+
+        font-size:22px;
+
+    }
+
+    .summary-grid{
+
+        grid-template-columns:1fr 1fr 1fr;
+
+    }
+
+    .summary-number{
+
+        font-size:20px;
+
+    }
+
+    .summary-label{
+
+        font-size:10px;
+
+    }
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="logo.png"
+class="logo">
+
+<div class="title">
+
+SMS Work Report Generator
+
+</div>
+
+<div class="subtitle">
+
+Generate Section Wise Work Reports From Google Sheet
+
+</div>
+
+<div class="filter-box">
+
+<div class="input-group">
+
+<label class="input-label">
+
+From Date
+
+</label>
+
+<input type="date"
+id="fromDate"
+class="date-input">
+
+</div>
+
+<div class="input-group">
+
+<label class="input-label">
+
+To Date
+
+</label>
+
+<input type="date"
+id="toDate"
+class="date-input">
+
+</div>
+
+<button class="generate-btn"
+onclick="generateReports()">
+
+📄 Generate Reports
+
+</button>
+
+</div>
+
+<div class="loading"
+id="loading">
+
+Fetching Google Sheet Data...
+
+</div>
+
+<div class="results"
+id="results">
+
+</div>
+
+<div class="footer">
+
+Indian Railway Work Report System
+
+<br>
+
+App Created By Gobind Sharma
+
+</div>
+
+</div>
+
+<div id="toast"></div>
+
+<script>
+
+const SHEET_URL =
+'https://docs.google.com/spreadsheets/d/1OP1z06rCpFMTRiAwncFIWuHK_rB2y0acy3KDVDnZGvA/gviz/tq?tqx=out:json';
+
+let sectionData = {};
+
+function showToast(message,type='info'){
+
+    const toast =
+    document.getElementById('toast');
+
+    toast.innerHTML = message;
+
+    if(type === 'success'){
+
+        toast.style.background =
+        'linear-gradient(135deg,#059669,#10b981)';
+
+    }
+
+    else if(type === 'error'){
+
+        toast.style.background =
+        'linear-gradient(135deg,#dc2626,#ef4444)';
+
+    }
+
+    else{
+
+        toast.style.background =
+        'linear-gradient(135deg,#111827,#1f2937)';
+
+    }
+
+    toast.style.display = 'block';
+
+    clearTimeout(window.toastTimer);
+
+    window.toastTimer =
+    setTimeout(()=>{
+
+        toast.style.display = 'none';
+
+    },3500);
+
+}
+
+function formatDate(dateStr){
+
+    const parts =
+    dateStr.split('/');
+
+    return new Date(
+        parts[2],
+        parts[1]-1,
+        parts[0]
+    );
+
+}
+
+function monthName(date){
+
+    return date.toLocaleString(
+        'default',
+        {month:'short'}
+    ) + ' ' + date.getFullYear();
+
+}
+
+async function fetchSheetData(){
+
+    const response =
+    await fetch(SHEET_URL);
+
+    const text =
+    await response.text();
+
+    const json =
+    JSON.parse(
+        text.substring(47)
+        .slice(0,-2)
+    );
+
+    return json.table.rows.map(row=>({
+
+        date:
+        row.c[0]?.v || '',
+
+        section:
+        row.c[1]?.v || '',
+
+        item:
+        row.c[2]?.v || '',
+
+        quantity:
+        row.c[3]?.v || 0,
+
+        thickness:
+        row.c[4]?.v || ''
+
+    }));
+
+}
+
+async function generateReports(){
+
+    const fromDate =
+    document.getElementById('fromDate').value;
+
+    const toDate =
+    document.getElementById('toDate').value;
+
+    if(!fromDate || !toDate){
+
+        showToast(
+        'Please select date range',
+        'error'
+        );
+
+        return;
+
+    }
+
+    document.getElementById(
+    'loading'
+    ).style.display='block';
+
+    document.getElementById(
+    'results'
+    ).innerHTML='';
+
+    try{
+
+        const rows =
+        await fetchSheetData();
+
+        const from =
+        new Date(fromDate);
+
+        const to =
+        new Date(toDate);
+
+        sectionData = {};
+
+        rows.forEach(row=>{
+
+            if(!row.date) return;
+
+            const rowDate =
+            formatDate(row.date);
+
+            if(
+            rowDate >= from &&
+            rowDate <= to
+            ){
+
+                if(!sectionData[row.section]){
+
+                    sectionData[row.section]=[];
+
+                }
+
+                sectionData[row.section]
+                .push(row);
+
+            }
+
+        });
+
+        renderCards(from,to);
+
+        showToast(
+        'Reports Generated Successfully',
+        'success'
+        );
+
+    }
+
+    catch(error){
+
+        console.log(error);
+
+        showToast(
+        'Error fetching sheet',
+        'error'
+        );
+
+    }
+
+    document.getElementById(
+    'loading'
+    ).style.display='none';
+
+}
+
+function renderCards(from,to){
+
+    const container =
+    document.getElementById('results');
+
+    container.innerHTML='';
+
+    Object.keys(sectionData).forEach(section=>{
+
+        const rows =
+        sectionData[section];
+
+        let totalQty = 0;
+
+        rows.forEach(r=>{
+
+            totalQty +=
+            Number(r.quantity);
+
+        });
+
+        const uniqueItems =
+        [...new Set(
+            rows.map(r=>r.item)
+        )];
+
+        const card =
+        document.createElement('div');
+
+        card.className =
+        'section-card';
+
+        card.innerHTML = `
+
+        <div class="section-header">
+
+            <div class="section-icon">
+            📋
+            </div>
+
+            <div class="section-name">
+            ${section}
+            </div>
+
+        </div>
+
+        <div class="summary-grid">
+
+            <div class="summary-box">
+
+                <div class="summary-number">
+                ${rows.length}
+                </div>
+
+                <div class="summary-label">
+                Entries
+                </div>
+
+            </div>
+
+            <div class="summary-box">
+
+                <div class="summary-number">
+                ${totalQty}
+                </div>
+
+                <div class="summary-label">
+                Total Qty
+                </div>
+
+            </div>
+
+            <div class="summary-box">
+
+                <div class="summary-number">
+                ${uniqueItems.length}
+                </div>
+
+                <div class="summary-label">
+                Items
+                </div>
+
+            </div>
+
+        </div>
+
+        <div class="button-row">
+
+            <button class="download-btn"
+            onclick="downloadPDF('${section}')">
+
+            ⬇ Download
+
+            </button>
+
+            <button class="share-btn"
+            onclick="sharePDF('${section}')">
+
+            🔗 Share
+
+            </button>
+
+        </div>
+
+        `;
+
+        container.appendChild(card);
+
+    });
+
+}
+
+async function createPDF(section){
+
+    const rows =
+    sectionData[section];
+
+    const { jsPDF } =
+    window.jspdf;
+
+    const doc =
+    new jsPDF(
+        'landscape'
+    );
+
+    const fromDate =
+    document.getElementById(
+    'fromDate'
+    ).value;
+
+    const toDate =
+    document.getElementById(
+    'toDate'
+    ).value;
+
+    const logo =
+    new Image();
+
+    logo.src = "logo.png";
+
+    return new Promise(resolve=>{
+
+        logo.onload = function(){
+
+            doc.setFillColor(
+            10,56,104
+            );
+
+            doc.rect(
+            0,
+            0,
+            297,
+            28,
+            'F'
+            );
+
+            doc.addImage(
+                logo,
+                'PNG',
+                6,
+                4,
+                16,
+                16
+            );
+
+            doc.setTextColor(
+            255,255,255
+            );
+
+            doc.setFontSize(26);
+
+            doc.setFont(
+            "helvetica",
+            "bold"
+            );
+
+            doc.text(
+                "SMS WORK REPORT",
+                148,
+                16,
+                {align:'center'}
+            );
+
+            doc.setFontSize(11);
+
+            doc.text(
+                "Start Date: " +
+                fromDate.split('-')
+                .reverse()
+                .join('/'),
+                8,
+                35
+            );
+
+            doc.text(
+                "End Date: " +
+                toDate.split('-')
+                .reverse()
+                .join('/'),
+                8,
+                42
+            );
+
+            doc.text(
+                "Section: " + section,
+                250,
+                35
+            );
+
+            const summary = {};
+
+            rows.forEach(r=>{
+
+                const key =
+                r.item + '|' +
+                r.thickness;
+
+                if(!summary[key]){
+
+                    summary[key]=0;
+
+                }
+
+                summary[key] +=
+                Number(r.quantity);
+
+            });
+
+            const summaryRows =
+            Object.keys(summary)
+            .map(key=>{
+
+                const parts =
+                key.split('|');
+
+                return [
+
+                    parts[0],
+                    parts[1],
+                    summary[key]
+
+                ];
+
+            });
+
+            const leftTable =
+            rows.map(r=>[
+
+                r.date,
+                r.item,
+                r.thickness,
+                r.quantity
+
+            ]);
+
+            doc.autoTable({
+
+                startY:48,
+
+                margin:{left:2},
+
+                head:[[
+                    'Date',
+                    'Items',
+                    'Thickness',
+                    'Qty'
+                ]],
+
+                body:leftTable,
+
+                tableWidth:160,
+
+                styles:{
+                    fontSize:9
+                },
+
+                headStyles:{
+                    fillColor:[21,94,166]
+                }
+
+            });
+
+            doc.autoTable({
+
+                startY:48,
+
+                margin:{left:163},
+
+                head:[[
+                    'Item Summary',
+                    'Thickness',
+                    'Total'
+                ]],
+
+                body:summaryRows,
+
+                tableWidth:130,
+
+                styles:{
+                    fontSize:9
+                },
+
+                headStyles:{
+                    fillColor:[190,24,93]
+                }
+
+            });
+
+            const blob =
+            doc.output('blob');
+
+            resolve(blob);
+
+        };
+
+    });
+
+}
+
+async function downloadPDF(section){
+
+    const blob =
+    await createPDF(section);
+
+    const fromDate =
+    new Date(
+        document.getElementById(
+        'fromDate'
+        ).value
+    );
+
+    const fileName =
+    section +
+    ' Work Report (' +
+    monthName(fromDate) +
+    ').pdf';
+
+    const a =
+    document.createElement('a');
+
+    a.href =
+    URL.createObjectURL(blob);
+
+    a.download =
+    fileName;
+
+    document.body.appendChild(a);
+
+    a.click();
+
+    document.body.removeChild(a);
+
+}
+
+async function sharePDF(section){
+
+    const blob =
+    await createPDF(section);
+
+    const fromDate =
+    new Date(
+        document.getElementById(
+        'fromDate'
+        ).value
+    );
+
+    const fileName =
+    section +
+    ' Work Report (' +
+    monthName(fromDate) +
+    ').pdf';
+
+    const file =
+    new File(
+        [blob],
+        fileName,
+        {
+            type:'application/pdf'
+        }
+    );
+
+    if(
+    navigator.canShare &&
+    navigator.canShare({files:[file]})
+    ){
+
+        navigator.share({
+
+            files:[file],
+
+            title:fileName
+
+        });
+
+    }
+
+    else{
+
+        showToast(
+        'Sharing not supported',
+        'error'
+        );
+
+    }
+
+}
+
+</script>
+
+</body>
+
+</html>
