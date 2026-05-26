@@ -938,482 +938,192 @@ function renderCards(){
 
 }
 
-function createSectionPDF(doc,section,rows){
+function createSectionPDF(doc, section, rows) {
 
-    const fromDate =
-    formatDisplayDate(
-    document.getElementById('fromDate').value
-    );
+    const fromDate = formatDisplayDate(document.getElementById('fromDate').value);
+    const toDate = formatDisplayDate(document.getElementById('toDate').value);
 
-    const toDate =
-    formatDisplayDate(
-    document.getElementById('toDate').value
-    );
-
+    // Sort rows consistently by Date
     rows.sort((a,b)=>{
-
         const pa = a.date.split('/');
         const pb = b.date.split('/');
-
-        return new Date(pa[2],pa[1]-1,pa[0]) -
-        new Date(pb[2],pb[1]-1,pb[0]);
-
+        return new Date(pa[2],pa[1]-1,pa[0]) - new Date(pb[2],pb[1]-1,pb[0]);
     });
 
+    // 1. Prepare Summary Table Data
     const summary = {};
-
-    rows.forEach(r=>{
-
-        const key =
-        r.item + '|' + r.thickness;
-
-        if(!summary[key]){
-
-            summary[key]=0;
-
-        }
-
+    rows.forEach(r => {
+        const key = r.item + '|' + r.thickness;
+        if(!summary[key]){ summary[key]=0; }
         summary[key] += Number(r.quantity);
-
     });
-
-    const summaryRows =
-    Object.keys(summary)
-    .map(key=>{
-
+    
+    const summaryRows = Object.keys(summary).map(key => {
         const p = key.split('|');
-
-        return [
-
-            p[0],
-            p[1],
-            summary[key]
-
-        ];
-
+        return [p[0], p[1], summary[key]];
     });
 
-    const detailRows = [];
-
-    let previousDate='';
-
-    rows.forEach(r=>{
-
-        const showDate =
-        r.date !== previousDate;
-
-        detailRows.push({
-
-            date:showDate
-            ? formatDisplayDate(
-                r.date.split('/').reverse().join('-')
-              )
-            : '',
-
-            item:r.item,
-
-            thickness:r.thickness,
-
-            qty:r.quantity
-
-        });
-
-        previousDate = r.date;
-
-    });
-
-    doc.setFillColor(5,10,35);
-
-    doc.rect(0,0,297,36,'F');
-
-    try{
-
-        const img =
-        document.querySelector('.logo');
-
-        doc.addImage(
-        img,
-        'PNG',
-        10,
-        5,
-        22,
-        22
-        );
-
-    }catch(e){}
-
-    doc.setTextColor(255,255,255);
-
-    doc.setFontSize(24);
-
-    doc.setFont(
-    'helvetica',
-    'bold'
-    );
-
-    doc.text(
-    'SMS WORK REPORT',
-    148,
-    15,
-    {align:'center'}
-    );
-
-    doc.setFontSize(10);
-
-    doc.setTextColor(210,210,210);
-
-    doc.text(
-    'App Created By Gobind Sharma',
-    148,
-    23,
-    {align:'center'}
-    );
-
-    doc.setFillColor(15,25,55);
-
-    doc.roundedRect(
-    10,
-    44,
-    277,
-    24,
-    7,
-    7,
-    'F'
-    );
-
-    doc.setTextColor(180,190,210);
-
-    doc.setFontSize(9);
-
-    doc.text(
-    'SECTION',
-    18,
-    52
-    );
-
-    doc.text(
-    'FROM DATE',
-    118,
-    52
-    );
-
-    doc.text(
-    'TO DATE',
-    218,
-    52
-    );
-
-    doc.setTextColor(255,255,255);
-
-    doc.setFontSize(14);
-
-    doc.setFont(
-    'helvetica',
-    'bold'
-    );
-
-    doc.text(
-    section,
-    18,
-    62
-    );
-
-    doc.text(
-    fromDate,
-    118,
-    62
-    );
-
-    doc.text(
-    toDate,
-    218,
-    62
-    );
-
-    doc.setFillColor(238,242,247);
-
-    doc.roundedRect(
-    8,
-    74,
-    168,
-    116,
-    8,
-    8,
-    'F'
-    );
-
-    doc.roundedRect(
-    182,
-    74,
-    107,
-    116,
-    8,
-    8,
-    'F'
-    );
-
-    doc.setTextColor(25,35,55);
-
-    doc.setFontSize(14);
-
-    doc.text(
-    'Detail Work Report',
-    14,
-    84
-    );
-
-    doc.text(
-    'Item Summary',
-    188,
-    84
-    );
-
-    let currentGroup = 0;
-
+    // 2. Prepare Detail Table Data (Grouped by Date)
     const bodyRows = [];
+    let currentGroup = 0;
+    let previousDate = '';
 
-    detailRows.forEach(r=>{
+    rows.forEach(r => {
+        let displayDate = formatDisplayDate(r.date.split('/').reverse().join('-'));
+        let dateVal = '';
 
-        if(r.date !== ''){
-
+        if (r.date !== previousDate) {
             currentGroup++;
-
+            dateVal = displayDate;
+            previousDate = r.date;
         }
 
         bodyRows.push({
-
-            row:[
-
-                r.date,
-                r.item,
-                r.thickness,
-                r.qty
-
-            ],
-
-            group:currentGroup
-
+            row: [dateVal, r.item, r.thickness, r.qty],
+            group: currentGroup
         });
-
     });
+
+    // --- DRAW PAGE HEADERS ---
+    doc.setFillColor(5,10,35);
+    doc.rect(0,0,297,36,'F');
+
+    try {
+        const img = document.querySelector('.logo');
+        if(img) {
+            doc.addImage(img, 'PNG', 10, 5, 22, 22);
+        }
+    } catch(e) {}
+
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(24);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SMS WORK REPORT', 148, 15, {align:'center'});
+
+    doc.setFontSize(10);
+    doc.setTextColor(210,210,210);
+    doc.text('App Created By Gobind Sharma', 148, 23, {align:'center'});
+
+    doc.setFillColor(15,25,55);
+    doc.roundedRect(10, 44, 277, 24, 7, 7, 'F');
+
+    doc.setTextColor(180,190,210);
+    doc.setFontSize(9);
+    doc.text('SECTION', 18, 52);
+    doc.text('FROM DATE', 118, 52);
+    doc.text('TO DATE', 218, 52);
+
+    doc.setTextColor(255,255,255);
+    doc.setFontSize(14);
+    doc.setFont('helvetica', 'bold');
+    doc.text(section, 18, 62);
+    doc.text(fromDate, 118, 62);
+    doc.text(toDate, 218, 62);
+
+    // Section Titles
+    doc.setTextColor(25,35,55);
+    doc.setFontSize(14);
+    doc.text('Detail Work Report', 10, 84);
+    doc.text('Item Summary', 160, 84);
+
+    // --- DRAW DETAIL TABLE (LEFT SIDE) ---
+    doc.autoTable({
+        startY: 90,
+        margin: { left: 10, right: 145 }, // Keeps it strictly on the left half
+        head: [['Date', 'Item Description', 'Thickness', 'Qty']],
+        body: bodyRows.map(r => r.row),
+        theme: 'grid',
+        styles: {
+            fontSize: 8.7,
+            cellPadding: 4,
+            lineColor: [220, 220, 220],
+            lineWidth: 0.25,
+            valign: 'middle'
+        },
+        headStyles: {
+            fillColor: [37, 99, 235], // Blue Header
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center'
+        },
+        columnStyles: {
+            0: { cellWidth: 28, halign: 'center', fontStyle: 'bold' },
+            1: { cellWidth: 70 },
+            2: { cellWidth: 25, halign: 'center' },
+            3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
+        },
+        didParseCell: function(data) {
+            if (data.section === 'body') {
+                const rowData = bodyRows[data.row.index];
+                
+                // Alternate color purely by Date Group
+                const bgColor = rowData.group % 2 === 0 ? [248, 250, 255] : [238, 244, 255];
+                data.cell.styles.fillColor = bgColor;
+                
+                // Emulate merged cells by hiding the top border of empty date strings
+                if (data.column.index === 0 && rowData.row[0] === '') {
+                    data.cell.styles.textColor = bgColor; 
+                    data.cell.styles.lineWidth = { top: 0, bottom: 0, left: 0.25, right: 0.25 };
+                    
+                    // Restore bottom border if this is the last item in the group or table
+                    if (data.row.index === bodyRows.length - 1 || 
+                       (bodyRows[data.row.index + 1] && bodyRows[data.row.index + 1].row[0] !== '')) {
+                         data.cell.styles.lineWidth.bottom = 0.25;
+                    }
+                }
+            }
+        }
+    });
+
+    // --- DRAW SUMMARY TABLE (RIGHT SIDE) ---
+    // Reset back to page 1 so side-by-side renders properly even if Detail Table created new pages.
+    doc.setPage(1); 
 
     doc.autoTable({
-
-        startY:90,
-
-        margin:{left:12},
-
-        tableWidth:160,
-
-        head:[[
-            'Date',
-            'Item Description',
-            'Thickness',
-            'Qty'
-        ]],
-
-        body:bodyRows.map(r=>r.row),
-
-        theme:'grid',
-
-        styles:{
-
-            fontSize:8.7,
-
-            cellPadding:4,
-
-            lineColor:[220,220,220],
-
-            lineWidth:0.25,
-
-            valign:'middle'
-
+        startY: 90,
+        margin: { left: 160, right: 10 }, // Keeps it strictly on the right half
+        head: [['Item Description', 'Thickness', 'Total Qty']],
+        body: summaryRows,
+        theme: 'grid',
+        styles: {
+            fontSize: 8.7,
+            cellPadding: 4,
+            lineColor: [220, 220, 220],
+            lineWidth: 0.25,
+            valign: 'middle'
         },
-
-        headStyles:{
-
-            fillColor:[37,99,235],
-
-            textColor:[255,255,255],
-
-            fontStyle:'bold',
-
-            halign:'center'
-
+        headStyles: {
+            fillColor: [124, 58, 237], // Purple Header for distinction
+            textColor: [255, 255, 255],
+            fontStyle: 'bold',
+            halign: 'center'
         },
-
-        columnStyles:{
-
-            0:{
-                cellWidth:30,
-                halign:'center',
-                fontStyle:'bold'
-            },
-
-            1:{
-                cellWidth:82
-            },
-
-            2:{
-                cellWidth:28,
-                halign:'center'
-            },
-
-            3:{
-                cellWidth:20,
-                halign:'center',
-                fontStyle:'bold'
+        columnStyles: {
+            0: { cellWidth: 67 },
+            1: { cellWidth: 35, halign: 'center' },
+            2: { cellWidth: 25, halign: 'center', fontStyle: 'bold' }
+        },
+        didParseCell: function(data) {
+            if (data.section === 'body') {
+                // Purple-tinted alternating rows
+                const bgColor = data.row.index % 2 === 0 ? [250, 248, 255] : [243, 238, 255]; 
+                data.cell.styles.fillColor = bgColor;
             }
-
-        },
-
-        didParseCell:function(data){
-
-            if(data.section === 'body'){
-
-                const rowData =
-                bodyRows[data.row.index];
-
-                const bgColor =
-                rowData.group % 2 === 0
-                ? [248,250,255]
-                : [238,244,255];
-
-                data.cell.styles.fillColor =
-                bgColor;
-
-                if(
-                data.column.index === 0
-                &&
-                rowData.row[0] === ''
-                ){
-
-                    data.cell.styles.textColor =
-                    bgColor;
-
-                    data.cell.styles.lineWidth = {
-
-                        top:0,
-                        bottom:0,
-                        left:0.25,
-                        right:0.25
-
-                    };
-
-                }
-
-            }
-
         }
-
     });
 
-    let summaryY = 90;
-
-    summaryRows.forEach(r=>{
-
-        if(summaryY > 178) return;
-
-        doc.setFillColor(255,255,255);
-
-        doc.roundedRect(
-
-            188,
-            summaryY,
-            94,
-            11,
-            3,
-            3,
-            'F'
-
-        );
-
-        doc.setTextColor(35,35,35);
-
-        doc.setFontSize(7.5);
-
-        const itemText =
-        doc.splitTextToSize(
-        String(r[0]),
-        44
-        );
-
-        doc.text(
-
-            itemText,
-
-            191,
-            summaryY + 4
-
-        );
-
-        doc.setTextColor(90,90,90);
-
-        doc.text(
-
-            r[1],
-
-            245,
-            summaryY + 4
-
-        );
-
-        doc.setFillColor(124,58,237);
-
-        doc.roundedRect(
-
-            262,
-            summaryY + 2,
-            15,
-            7,
-            2,
-            2,
-            'F'
-
-        );
-
-        doc.setTextColor(255,255,255);
-
-        doc.setFontSize(7.5);
-
-        doc.text(
-
-            String(r[2]),
-
-            269.5,
-            summaryY + 6,
-
-            {align:'center'}
-
-        );
-
-        summaryY += 13;
-
-    });
-
-    const pageHeight =
-    doc.internal.pageSize.height;
-
-    doc.setDrawColor(220,220,220);
-
-    doc.line(
-    10,
-    pageHeight-10,
-    287,
-    pageHeight-10
-    );
-
-    doc.setFontSize(9);
-
-    doc.setTextColor(120,120,120);
-
-    doc.text(
-    'Indian Railway Work Report System',
-    148,
-    pageHeight-4,
-    {align:'center'}
-    );
-
+    // --- DRAW FOOTERS (ALL PAGES) ---
+    const pageCount = doc.internal.getNumberOfPages();
+    const pageHeight = doc.internal.pageSize.height;
+    
+    for (let i = 1; i <= pageCount; i++) {
+        doc.setPage(i);
+        doc.setDrawColor(220, 220, 220);
+        doc.line(10, pageHeight - 10, 287, pageHeight - 10);
+        doc.setFontSize(9);
+        doc.setTextColor(120, 120, 120);
+        doc.text('Indian Railway Work Report System', 148, pageHeight - 4, { align: 'center' });
+    }
 }
 
 async function createPDF(section){
