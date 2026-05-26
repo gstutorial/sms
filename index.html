@@ -966,7 +966,7 @@ function createSectionPDF(doc, section, rows) {
         return [p[0], p[1], summary[key]];
     });
 
-    // 2. Prepare Detail Table Data (Grouped by Date utilizing rowSpan for centering)
+    // 2. Prepare Detail Table Data
     const dateCounts = {};
     rows.forEach(r => {
         dateCounts[r.date] = (dateCounts[r.date] || 0) + 1;
@@ -992,7 +992,6 @@ function createSectionPDF(doc, section, rows) {
             });
             previousDate = r.date;
         } else {
-            // jspdf-autotable requires omitting the merged cell entirely in subsequent rows
             bodyRows.push({
                 row: [
                     r.item,
@@ -1004,110 +1003,134 @@ function createSectionPDF(doc, section, rows) {
         }
     });
 
-    // --- DRAW DETAIL TABLE (TOP/FIRST) ---
+    // Add Table Titles (Reduced font size to fit portrait side-by-side cleanly)
     doc.setTextColor(25, 35, 55);
-    doc.setFontSize(14);
+    doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('Detail Work Report', 14, 46);
+    doc.text('Detail Work Report', 10, 46);
+    doc.text('Item Summary', 125, 46);
 
+    // --- DRAW DETAIL TABLE (LEFT SIDE) ---
     doc.autoTable({
-        startY: 50,
-        margin: { top: 50, bottom: 15, left: 12, right: 12 }, 
-        head: [['Date', 'Item Description', 'Thickness', 'Qty']],
+        startY: 48,
+        // Portrait width is 210. Left margin 10, right margin 90 leaves exactly 110mm for Left Table.
+        margin: { top: 48, bottom: 15, left: 10, right: 90 }, 
+        head: [['Date', 'Description', 'Thick.', 'Qty']],
         body: bodyRows.map(r => r.row),
         theme: 'grid',
         styles: {
-            fontSize: 8.7,
-            cellPadding: 4,
+            fontSize: 7.5,
+            cellPadding: 2.5,
             lineColor: [200, 200, 200],
             lineWidth: 0.1,
             valign: 'middle'
         },
         headStyles: {
-            fillColor: [37, 99, 235], // Blue Header
             textColor: [255, 255, 255],
             fontStyle: 'bold',
             halign: 'center'
         },
         columnStyles: {
-            0: { cellWidth: 35, halign: 'center', fontStyle: 'bold' },
-            1: { cellWidth: 91 },
-            2: { cellWidth: 35, halign: 'center' },
-            3: { cellWidth: 25, halign: 'center', fontStyle: 'bold' }
+            0: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
+            1: { cellWidth: 56 },
+            2: { cellWidth: 18, halign: 'center' },
+            3: { cellWidth: 14, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
+            if (data.section === 'head') {
+                data.cell.styles.fillColor = null; // Let willDrawCell paint the gradient
+            }
             if (data.section === 'body') {
                 const rowData = bodyRows[data.row.index];
-                // Highly distinct alternating row colors separated perfectly by date group
-                const bgColor = rowData.group % 2 === 0 ? [255, 255, 255] : [230, 240, 255]; 
+                const bgColor = rowData.group % 2 === 0 ? [255, 255, 255] : [235, 243, 255]; 
                 data.cell.styles.fillColor = bgColor;
+            }
+        },
+        willDrawCell: function(data) {
+            // Draw custom Dark Blue gradient in the header
+            if (data.section === 'head') {
+                const { x, y, width, height } = data.cell;
+                for (let i = 0; i <= height; i += 0.5) {
+                    let ratio = i / height;
+                    let r = Math.round(15 + (30 - 15) * ratio); // 15 to 30
+                    let g = Math.round(23 + (58 - 23) * ratio); // 23 to 58
+                    let b = Math.round(42 + (138 - 42) * ratio); // 42 to 138
+                    doc.setFillColor(r, g, b);
+                    doc.rect(x, y + i, width, 0.6, 'F');
+                }
             }
         }
     });
 
-    // --- DRAW SUMMARY TABLE (BOTTOM/SECOND) ---
-    let finalY = doc.lastAutoTable.finalY;
-    const pageHeight = doc.internal.pageSize.height;
-
-    // Push to next page if there isn't enough room for the Summary Table Header
-    if (finalY > pageHeight - 40) {
-        doc.addPage();
-        finalY = 40; 
-    }
-
-    doc.setTextColor(25, 35, 55);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text('Item Summary', 14, finalY + 12);
+    // --- DRAW SUMMARY TABLE (RIGHT SIDE) ---
+    // Reset back to start page so it draws side-by-side
+    doc.setPage(startPage); 
 
     doc.autoTable({
-        startY: finalY + 16,
-        margin: { top: 50, bottom: 15, left: 12, right: 12 },
-        head: [['Item Description', 'Thickness', 'Total Qty']],
+        startY: 48,
+        // Start left at 125. Right margin 10. Leaves exactly 75mm for Right Table.
+        margin: { top: 48, bottom: 15, left: 125, right: 10 },
+        head: [['Item Description', 'Thick.', 'Total Qty']],
         body: summaryRows,
         theme: 'grid',
         styles: {
-            fontSize: 8.7,
-            cellPadding: 4,
+            fontSize: 7.5,
+            cellPadding: 2.5,
             lineColor: [200, 200, 200],
             lineWidth: 0.1,
             valign: 'middle'
         },
         headStyles: {
-            fillColor: [124, 58, 237], // Purple Header
             textColor: [255, 255, 255],
             fontStyle: 'bold',
             halign: 'center'
         },
         columnStyles: {
-            0: { cellWidth: 101 },
-            1: { cellWidth: 45, halign: 'center' },
-            2: { cellWidth: 40, halign: 'center', fontStyle: 'bold' }
+            0: { cellWidth: 42 },
+            1: { cellWidth: 18, halign: 'center' },
+            2: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
+            if (data.section === 'head') {
+                data.cell.styles.fillColor = null; // Let willDrawCell paint the gradient
+            }
             if (data.section === 'body') {
-                const bgColor = data.row.index % 2 === 0 ? [255, 255, 255] : [240, 235, 255]; 
+                const bgColor = data.row.index % 2 === 0 ? [255, 255, 255] : [240, 248, 245]; 
                 data.cell.styles.fillColor = bgColor;
+            }
+        },
+        willDrawCell: function(data) {
+            // Draw custom Dark Green gradient in the header
+            if (data.section === 'head') {
+                const { x, y, width, height } = data.cell;
+                for (let i = 0; i <= height; i += 0.5) {
+                    let ratio = i / height;
+                    let r = Math.round(2 + (4 - 2) * ratio);    // 2 to 4
+                    let g = Math.round(44 + (120 - 44) * ratio);  // 44 to 120
+                    let b = Math.round(34 + (87 - 34) * ratio);   // 34 to 87
+                    doc.setFillColor(r, g, b);
+                    doc.rect(x, y + i, width, 0.6, 'F');
+                }
             }
         }
     });
 
     // --- DRAW HEADERS AND FOOTERS (ON ALL PAGES FOR THIS SECTION) ---
     const endPage = doc.internal.getNumberOfPages();
+    const pageHeight = doc.internal.pageSize.height;
     
     for (let i = startPage; i <= endPage; i++) {
         doc.setPage(i);
         
-        // 1. Draw Linear Gradient Header Banner (Width updated to 210 for portrait)
+        // 1. Draw Linear Gradient Header Banner
         const headerHeight = 36;
         for (let y = 0; y <= headerHeight; y += 0.5) {
-            // Gradient from Dark Blue (15,23,42) to Blue-Green (13,148,136)
             let ratio = y / headerHeight;
             let r = Math.round(15 + (13 - 15) * ratio);
             let g = Math.round(23 + (148 - 23) * ratio);
             let b = Math.round(42 + (136 - 42) * ratio);
             doc.setFillColor(r, g, b);
-            doc.rect(0, y, 210, 0.6, 'F'); // 210mm portrait width
+            doc.rect(0, y, 210, 0.6, 'F'); 
         }
 
         // 2. Add Logo
@@ -1118,7 +1141,7 @@ function createSectionPDF(doc, section, rows) {
             }
         } catch(e) {}
 
-        // 3. Add Titles and Single Line Info (Centered at X = 105 for portrait)
+        // 3. Add Titles and Single Line Info
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
@@ -1136,7 +1159,7 @@ function createSectionPDF(doc, section, rows) {
         const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
         doc.text(infoText, 105, 30, {align:'center'});
 
-        // 4. Add Footer (Centered at X = 105, Line to 200 for portrait)
+        // 4. Add Footer
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.5);
         doc.line(10, pageHeight - 10, 200, pageHeight - 10);
@@ -1153,7 +1176,7 @@ async function createPDF(section){
     window.jspdf;
 
     const doc =
-    new jsPDF('portrait'); // Changed to portrait
+    new jsPDF('portrait');
 
     createSectionPDF(
         doc,
@@ -1224,7 +1247,7 @@ async function createAllPDF(){
     window.jspdf;
 
     const doc =
-    new jsPDF('portrait'); // Changed to portrait
+    new jsPDF('portrait');
 
     const sections =
     Object.keys(sectionData);
