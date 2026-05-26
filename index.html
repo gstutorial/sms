@@ -910,14 +910,44 @@ function renderCards(){
     });
 
 }
+    function formatDisplayDate(dateString){
+
+    const date =
+    new Date(dateString);
+
+    const months = [
+
+        'Jan','Feb','Mar',
+        'Apr','May','Jun',
+        'Jul','Aug','Sep',
+        'Oct','Nov','Dec'
+
+    ];
+
+    return String(date.getDate())
+    .padStart(2,'0')
+
+    + '-'
+
+    + months[date.getMonth()]
+
+    + '-'
+
+    + date.getFullYear();
+
+}
 
 function createSectionPDF(doc,section,rows){
 
     const fromDate =
-    document.getElementById('fromDate').value;
+    formatDisplayDate(
+    document.getElementById('fromDate').value
+    );
 
     const toDate =
-    document.getElementById('toDate').value;
+    formatDisplayDate(
+    document.getElementById('toDate').value
+    );
 
     rows.sort((a,b)=>{
 
@@ -964,32 +994,29 @@ function createSectionPDF(doc,section,rows){
 
     });
 
-    /* BETTER DATE GROUPING */
+    /* DETAIL */
 
     const detailRows = [];
 
-    let lastDate='';
+    let previousDate='';
 
     rows.forEach(r=>{
 
-        let dateText = r.date;
-
-        if(r.date === lastDate){
-
-            dateText = '↳';
-
-        }
-
-        lastDate = r.date;
-
         detailRows.push([
 
-            dateText,
+            r.date === previousDate
+            ? ''
+            : r.date,
+
             r.item,
+
             r.thickness,
+
             r.quantity
 
         ]);
+
+        previousDate = r.date;
 
     });
 
@@ -1042,7 +1069,7 @@ function createSectionPDF(doc,section,rows){
     {align:'center'}
     );
 
-    /* DARK INFO CARD */
+    /* INFO CARD */
 
     doc.setFillColor(20,30,55);
 
@@ -1082,11 +1109,6 @@ function createSectionPDF(doc,section,rows){
 
     doc.setFontSize(14);
 
-    doc.setFont(
-    'helvetica',
-    'bold'
-    );
-
     doc.text(
     section,
     18,
@@ -1105,7 +1127,7 @@ function createSectionPDF(doc,section,rows){
     60
     );
 
-    /* CARD BACKGROUNDS */
+    /* CARD BG */
 
     doc.setFillColor(245,247,250);
 
@@ -1128,8 +1150,6 @@ function createSectionPDF(doc,section,rows){
     8,
     'F'
     );
-
-    /* CARD TITLES */
 
     doc.setTextColor(25,35,55);
 
@@ -1203,37 +1223,24 @@ function createSectionPDF(doc,section,rows){
         columnStyles:{
 
             0:{
-
-                cellWidth:26,
-
+                cellWidth:28,
                 halign:'center',
-
                 fontStyle:'bold'
-
             },
 
             1:{
-
-                cellWidth:86
-
+                cellWidth:84
             },
 
             2:{
-
                 cellWidth:28,
-
                 halign:'center'
-
             },
 
             3:{
-
                 cellWidth:20,
-
                 halign:'center',
-
                 fontStyle:'bold'
-
             }
 
         },
@@ -1241,15 +1248,17 @@ function createSectionPDF(doc,section,rows){
         didParseCell:function(data){
 
             if(
-            data.column.index === 0 &&
-            data.cell.raw === '↳'
+            data.section === 'body'
+            &&
+            data.column.index === 0
+            &&
+            data.cell.raw === ''
             ){
 
-                data.cell.styles.textColor =
-                [120,120,120];
+                data.cell.styles.lineWidth = 0;
 
-                data.cell.styles.fontStyle =
-                'bold';
+                data.cell.styles.fillColor =
+                [252,252,252];
 
             }
 
