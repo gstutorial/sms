@@ -460,12 +460,6 @@ body{
 
     }
 
-    .summary-grid{
-
-        grid-template-columns:1fr 1fr 1fr;
-
-    }
-
     .summary-number{
 
         font-size:20px;
@@ -618,14 +612,28 @@ function showToast(message,type='info'){
 
 function formatDate(dateStr){
 
-    const parts =
-    dateStr.split('/');
+    if(!dateStr) return null;
 
-    return new Date(
-        parts[2],
-        parts[1]-1,
-        parts[0]
-    );
+    if(typeof dateStr === 'string'){
+
+        const parts =
+        dateStr.split('/');
+
+        if(parts.length === 3){
+
+            return new Date(
+
+                parseInt(parts[2]),
+                parseInt(parts[1]) - 1,
+                parseInt(parts[0])
+
+            );
+
+        }
+
+    }
+
+    return null;
 
 }
 
@@ -648,14 +656,18 @@ async function fetchSheetData(){
 
     const json =
     JSON.parse(
-        text.substring(47)
-        .slice(0,-2)
+        text.substring(47).slice(0,-2)
     );
 
-    return json.table.rows.map(row=>({
+    const rows =
+    json.table.rows;
+
+    return rows.map(row=>({
 
         date:
-        row.c[0]?.v || '',
+        row.c[0]?.f ||
+        row.c[0]?.v ||
+        '',
 
         section:
         row.c[1]?.v || '',
@@ -664,7 +676,7 @@ async function fetchSheetData(){
         row.c[2]?.v || '',
 
         quantity:
-        row.c[3]?.v || 0,
+        Number(row.c[3]?.v || 0),
 
         thickness:
         row.c[4]?.v || ''
@@ -711,16 +723,17 @@ async function generateReports(){
         const to =
         new Date(toDate);
 
+        to.setHours(23,59,59,999);
+
         sectionData = {};
 
         rows.forEach(row=>{
-
-            if(!row.date) return;
 
             const rowDate =
             formatDate(row.date);
 
             if(
+            rowDate &&
             rowDate >= from &&
             rowDate <= to
             ){
@@ -738,12 +751,28 @@ async function generateReports(){
 
         });
 
-        renderCards(from,to);
+        renderCards();
 
-        showToast(
-        'Reports Generated Successfully',
-        'success'
-        );
+        if(
+        Object.keys(sectionData)
+        .length === 0
+        ){
+
+            showToast(
+            'No records found',
+            'error'
+            );
+
+        }
+
+        else{
+
+            showToast(
+            'Reports Generated Successfully',
+            'success'
+            );
+
+        }
 
     }
 
@@ -764,7 +793,7 @@ async function generateReports(){
 
 }
 
-function renderCards(from,to){
+function renderCards(){
 
     const container =
     document.getElementById('results');
@@ -885,9 +914,12 @@ async function createPDF(section){
     window.jspdf;
 
     const doc =
-    new jsPDF(
-        'landscape'
-    );
+    new jsPDF('landscape');
+
+    const logo =
+    new Image();
+
+    logo.src = "logo.png";
 
     const fromDate =
     document.getElementById(
@@ -898,11 +930,6 @@ async function createPDF(section){
     document.getElementById(
     'toDate'
     ).value;
-
-    const logo =
-    new Image();
-
-    logo.src = "logo.png";
 
     return new Promise(resolve=>{
 
