@@ -702,13 +702,13 @@ async function fetchSheetData(){
 
 async function generateReports(){
 
-    const fromDate =
+    const fromDateVal =
     document.getElementById('fromDate').value;
 
-    const toDate =
+    const toDateVal =
     document.getElementById('toDate').value;
 
-    if(!fromDate || !toDate){
+    if(!fromDateVal || !toDateVal){
 
         showToast(
         'Please Select Date Range'
@@ -718,11 +718,15 @@ async function generateReports(){
 
     }
 
-    const from =
-    new Date(fromDate);
+    // FIX: Parse HTML input dates locally instead of relying on UTC assumption
+    const fParts = fromDateVal.split('-');
+    const from = new Date(fParts[0], fParts[1] - 1, fParts[2]);
 
-    const to =
-    new Date(toDate);
+    const tParts = toDateVal.split('-');
+    const to = new Date(tParts[0], tParts[1] - 1, tParts[2]);
+    
+    // Set the "To Date" to the end of the day to capture everything
+    to.setHours(23, 59, 59, 999);
 
     if(from > to){
 
@@ -743,8 +747,6 @@ async function generateReports(){
     const rows =
     await fetchSheetData();
 
-    to.setHours(23,59,59,999);
-
     sectionData = {};
 
     rows.forEach(row=>{
@@ -754,6 +756,7 @@ async function generateReports(){
         const p =
         row.date.split('/');
 
+        // rowDate is parsed locally, matching our fixed from/to logic
         const rowDate =
         new Date(
             p[2],
@@ -940,8 +943,14 @@ function renderCards(){
 
 function createSectionPDF(doc, section, rows) {
 
-    const fromDate = formatDisplayDate(document.getElementById('fromDate').value);
-    const toDate = formatDisplayDate(document.getElementById('toDate').value);
+    const fromDateVal = document.getElementById('fromDate').value;
+    const fParts = fromDateVal.split('-');
+    const fromDate = formatDisplayDate(`${fParts[0]}-${fParts[1]}-${fParts[2]}T00:00:00`);
+
+    const toDateVal = document.getElementById('toDate').value;
+    const tParts = toDateVal.split('-');
+    const toDate = formatDisplayDate(`${tParts[0]}-${tParts[1]}-${tParts[2]}T00:00:00`);
+    
     const startPage = doc.internal.getCurrentPageInfo().pageNumber;
 
     rows.sort((a,b)=>{
@@ -972,7 +981,7 @@ function createSectionPDF(doc, section, rows) {
     let previousDate = '';
 
     rows.forEach(r => {
-        let displayDate = formatDisplayDate(r.date.split('/').reverse().join('-'));
+        let displayDate = formatDisplayDate(r.date.split('/').reverse().join('-') + 'T00:00:00');
 
         if (r.date !== previousDate) {
             currentGroup++;
@@ -998,17 +1007,14 @@ function createSectionPDF(doc, section, rows) {
         }
     });
 
-    // Add Table Titles aligned with exact 3mm / 126mm margins
     doc.setTextColor(25, 35, 55);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
     doc.text('Detail Work Report', 3, 46);
     doc.text('Item Summary', 126, 46);
 
-    // --- DRAW DETAIL TABLE (LEFT SIDE) ---
     doc.autoTable({
         startY: 48,
-        // Exactly 3mm left, 87mm right (leaving 120mm width for table)
         margin: { top: 48, bottom: 15, left: 3, right: 87 }, 
         head: [['Date', 'Description', 'Thick.', 'Qty']],
         body: bodyRows.map(r => r.row),
@@ -1027,7 +1033,7 @@ function createSectionPDF(doc, section, rows) {
         },
         columnStyles: {
             0: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
-            1: { cellWidth: 65 }, // Expanded proportionately
+            1: { cellWidth: 65 }, 
             2: { cellWidth: 18, halign: 'center' },
             3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
         },
@@ -1042,7 +1048,6 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
-            // Draw custom Dark Blue gradient in the header
             if (data.section === 'head') {
                 const { x, y, width, height } = data.cell;
                 for (let i = 0; i <= height; i += 0.5) {
@@ -1057,13 +1062,10 @@ function createSectionPDF(doc, section, rows) {
         }
     });
 
-    // --- DRAW SUMMARY TABLE (RIGHT SIDE) ---
-    // Reset back to start page so it draws side-by-side
     doc.setPage(startPage); 
 
     doc.autoTable({
         startY: 48,
-        // Exactly 126mm left (120mm left table + 3mm left margin + 3mm gap), 3mm right (leaves 81mm width)
         margin: { top: 48, bottom: 15, left: 126, right: 3 },
         head: [['Item Description', 'Thick.', 'Total Qty']],
         body: summaryRows,
@@ -1081,7 +1083,7 @@ function createSectionPDF(doc, section, rows) {
             halign: 'center'
         },
         columnStyles: {
-            0: { cellWidth: 46 }, // Expanded proportionately
+            0: { cellWidth: 46 }, 
             1: { cellWidth: 18, halign: 'center' },
             2: { cellWidth: 17, halign: 'center', fontStyle: 'bold' }
         },
@@ -1095,7 +1097,6 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
-            // Draw custom Dark Green gradient in the header
             if (data.section === 'head') {
                 const { x, y, width, height } = data.cell;
                 for (let i = 0; i <= height; i += 0.5) {
@@ -1110,14 +1111,12 @@ function createSectionPDF(doc, section, rows) {
         }
     });
 
-    // --- DRAW HEADERS AND FOOTERS (ON ALL PAGES FOR THIS SECTION) ---
     const endPage = doc.internal.getNumberOfPages();
     const pageHeight = doc.internal.pageSize.height;
     
     for (let i = startPage; i <= endPage; i++) {
         doc.setPage(i);
         
-        // 1. Draw Linear Gradient Header Banner
         const headerHeight = 36;
         for (let y = 0; y <= headerHeight; y += 0.5) {
             let ratio = y / headerHeight;
@@ -1128,7 +1127,6 @@ function createSectionPDF(doc, section, rows) {
             doc.rect(0, y, 210, 0.6, 'F'); 
         }
 
-        // 2. Add Logo (Aligned to 3mm left margin)
         try {
             const img = document.querySelector('.logo');
             if(img) {
@@ -1136,7 +1134,6 @@ function createSectionPDF(doc, section, rows) {
             }
         } catch(e) {}
 
-        // 3. Add Titles and Single Line Info
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(22);
         doc.setFont('helvetica', 'bold');
@@ -1147,14 +1144,12 @@ function createSectionPDF(doc, section, rows) {
         doc.setFont('helvetica', 'normal');
         doc.text('App Created By Gobind Sharma', 105, 20, {align:'center'});
 
-        // Single line Section and Dates
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(255, 255, 255);
         const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
         doc.text(infoText, 105, 30, {align:'center'});
 
-        // 4. Add Footer (3mm on both sides -> 3 to 207)
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.5);
         doc.line(3, pageHeight - 10, 207, pageHeight - 10);
@@ -1167,100 +1162,46 @@ function createSectionPDF(doc, section, rows) {
 
 async function createPDF(section){
 
-    const { jsPDF } =
-    window.jspdf;
-
-    const doc =
-    new jsPDF('portrait');
-
-    createSectionPDF(
-        doc,
-        section,
-        sectionData[section]
-    );
-
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('portrait');
+    createSectionPDF(doc, section, sectionData[section]);
     return doc.output('blob');
 
 }
 
 async function downloadPDF(section){
 
-    const blob =
-    await createPDF(section);
-
-    const a =
-    document.createElement('a');
-
-    a.href =
-    URL.createObjectURL(blob);
-
-    a.download =
-    section + '.pdf';
-
+    const blob = await createPDF(section);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = section + '.pdf';
     a.click();
 
 }
 
 async function sharePDF(section){
 
-    const blob =
-    await createPDF(section);
-
-    const file =
-    new File(
-        [blob],
-        section + '.pdf',
-        {
-            type:'application/pdf'
-        }
-    );
-
-    if(navigator.canShare &&
-    navigator.canShare({files:[file]})){
-
-        await navigator.share({
-
-            files:[file]
-
-        });
-
-    }
-
-    else{
-
-        showToast(
-        'Sharing Not Supported'
-        );
-
+    const blob = await createPDF(section);
+    const file = new File([blob], section + '.pdf', { type:'application/pdf' });
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({ files:[file] });
+    } else {
+        showToast('Sharing Not Supported');
     }
 
 }
 
 async function createAllPDF(){
 
-    const { jsPDF } =
-    window.jspdf;
-
-    const doc =
-    new jsPDF('portrait');
-
-    const sections =
-    Object.keys(sectionData);
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('portrait');
+    const sections = Object.keys(sectionData);
 
     sections.forEach((section,index)=>{
-
         if(index !== 0){
-
             doc.addPage();
-
         }
-
-        createSectionPDF(
-            doc,
-            section,
-            sectionData[section]
-        );
-
+        createSectionPDF(doc, section, sectionData[section]);
     });
 
     return doc.output('blob');
@@ -1269,53 +1210,22 @@ async function createAllPDF(){
 
 async function downloadAllPDF(){
 
-    const blob =
-    await createAllPDF();
-
-    const a =
-    document.createElement('a');
-
-    a.href =
-    URL.createObjectURL(blob);
-
-    a.download =
-    'All Sections Report.pdf';
-
+    const blob = await createAllPDF();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'All Sections Report.pdf';
     a.click();
 
 }
 
 async function shareAllPDF(){
 
-    const blob =
-    await createAllPDF();
-
-    const file =
-    new File(
-        [blob],
-        'All Sections Report.pdf',
-        {
-            type:'application/pdf'
-        }
-    );
-
-    if(navigator.canShare &&
-    navigator.canShare({files:[file]})){
-
-        await navigator.share({
-
-            files:[file]
-
-        });
-
-    }
-
-    else{
-
-        showToast(
-        'Sharing Not Supported'
-        );
-
+    const blob = await createAllPDF();
+    const file = new File([blob], 'All Sections Report.pdf', { type:'application/pdf' });
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({ files:[file] });
+    } else {
+        showToast('Sharing Not Supported');
     }
 
 }
