@@ -104,8 +104,6 @@ body{
 
     margin-top:10px;
 
-    line-height:1.15;
-
 }
 
 .subtitle{
@@ -281,8 +279,6 @@ body{
 
     font-size:22px;
 
-    font-weight:bold;
-
 }
 
 .section-name{
@@ -450,28 +446,6 @@ body{
 
 }
 
-@media(max-width:600px){
-
-    .title{
-
-        font-size:22px;
-
-    }
-
-    .summary-number{
-
-        font-size:20px;
-
-    }
-
-    .summary-label{
-
-        font-size:10px;
-
-    }
-
-}
-
 </style>
 
 </head>
@@ -581,17 +555,10 @@ function showToast(message,type='info'){
 
     }
 
-    else if(type === 'error'){
-
-        toast.style.background =
-        'linear-gradient(135deg,#dc2626,#ef4444)';
-
-    }
-
     else{
 
         toast.style.background =
-        'linear-gradient(135deg,#111827,#1f2937)';
+        'linear-gradient(135deg,#dc2626,#ef4444)';
 
     }
 
@@ -602,7 +569,7 @@ function showToast(message,type='info'){
     window.toastTimer =
     setTimeout(()=>{
 
-        toast.style.display = 'none';
+        toast.style.display='none';
 
     },3500);
 
@@ -612,27 +579,23 @@ function parseGoogleDate(value){
 
     if(!value) return null;
 
-    if(
-    typeof value === 'string' &&
-    value.startsWith('Date(')
-    ){
+    const str =
+    String(value);
 
-        const match =
-        value.match(
-        /Date\((\d+),(\d+),(\d+)\)/
+    const match =
+    str.match(
+    /Date\((\d+),(\d+),(\d+)\)/
+    );
+
+    if(match){
+
+        return new Date(
+
+            Number(match[1]),
+            Number(match[2]),
+            Number(match[3])
+
         );
-
-        if(match){
-
-            return new Date(
-
-                Number(match[1]),
-                Number(match[2]),
-                Number(match[3])
-
-            );
-
-        }
 
     }
 
@@ -678,22 +641,33 @@ async function fetchSheetData(){
         text.substring(47).slice(0,-2)
     );
 
-    return json.table.rows.map(row=>({
+    const rows =
+    json.table.rows;
+
+    return rows.map(row=>({
 
         rawDate:
         row.c[0]?.v || '',
 
         section:
-        row.c[1]?.v || '',
+        String(
+        row.c[1]?.v || ''
+        ).trim(),
 
         item:
-        row.c[2]?.v || '',
+        String(
+        row.c[2]?.v || ''
+        ).trim(),
 
         quantity:
-        Number(row.c[3]?.v || 0),
+        Number(
+        row.c[3]?.v || 0
+        ),
 
         thickness:
+        String(
         row.c[4]?.v || ''
+        ).trim()
 
     }));
 
@@ -702,10 +676,14 @@ async function fetchSheetData(){
 async function generateReports(){
 
     const fromDate =
-    document.getElementById('fromDate').value;
+    document.getElementById(
+    'fromDate'
+    ).value;
 
     const toDate =
-    document.getElementById('toDate').value;
+    document.getElementById(
+    'toDate'
+    ).value;
 
     if(!fromDate || !toDate){
 
@@ -734,37 +712,56 @@ async function generateReports(){
         const from =
         new Date(fromDate);
 
+        from.setHours(0,0,0,0);
+
         const to =
         new Date(toDate);
 
-        to.setHours(23,59,59,999);
+        to.setHours(
+            23,
+            59,
+            59,
+            999
+        );
 
         sectionData = {};
 
         rows.forEach(row=>{
 
             const rowDate =
-            parseGoogleDate(row.rawDate);
+            parseGoogleDate(
+            row.rawDate
+            );
+
+            if(!rowDate) return;
 
             if(
-            rowDate &&
             rowDate >= from &&
             rowDate <= to
             ){
 
-                if(!sectionData[row.section]){
+                if(
+                !sectionData[
+                row.section
+                ]
+                ){
 
-                    sectionData[row.section]=[];
+                    sectionData[
+                    row.section
+                    ] = [];
 
                 }
 
-                sectionData[row.section]
-                .push({
+                sectionData[
+                row.section
+                ].push({
 
                     ...row,
 
                     formattedDate:
-                    formatDisplayDate(rowDate)
+                    formatDisplayDate(
+                    rowDate
+                    )
 
                 });
 
@@ -937,197 +934,148 @@ async function createPDF(section){
     const doc =
     new jsPDF('landscape');
 
-    const logo =
-    new Image();
+    const summary = {};
 
-    logo.src = "logo.png";
+    rows.forEach(r=>{
 
-    const fromDate =
-    document.getElementById(
-    'fromDate'
-    ).value;
+        const key =
+        r.item + '|' +
+        r.thickness;
 
-    const toDate =
-    document.getElementById(
-    'toDate'
-    ).value;
+        if(!summary[key]){
 
-    return new Promise(resolve=>{
+            summary[key]=0;
 
-        logo.onload = function(){
+        }
 
-            doc.setFillColor(
-            10,56,104
-            );
-
-            doc.rect(
-            0,
-            0,
-            297,
-            28,
-            'F'
-            );
-
-            doc.addImage(
-                logo,
-                'PNG',
-                6,
-                4,
-                16,
-                16
-            );
-
-            doc.setTextColor(
-            255,255,255
-            );
-
-            doc.setFontSize(26);
-
-            doc.setFont(
-            "helvetica",
-            "bold"
-            );
-
-            doc.text(
-                "SMS WORK REPORT",
-                148,
-                16,
-                {align:'center'}
-            );
-
-            doc.setFontSize(11);
-
-            doc.text(
-                "Start Date: " +
-                fromDate.split('-')
-                .reverse()
-                .join('/'),
-                8,
-                35
-            );
-
-            doc.text(
-                "End Date: " +
-                toDate.split('-')
-                .reverse()
-                .join('/'),
-                8,
-                42
-            );
-
-            doc.text(
-                "Section: " + section,
-                250,
-                35
-            );
-
-            const summary = {};
-
-            rows.forEach(r=>{
-
-                const key =
-                r.item + '|' +
-                r.thickness;
-
-                if(!summary[key]){
-
-                    summary[key]=0;
-
-                }
-
-                summary[key] +=
-                Number(r.quantity);
-
-            });
-
-            const summaryRows =
-            Object.keys(summary)
-            .map(key=>{
-
-                const parts =
-                key.split('|');
-
-                return [
-
-                    parts[0],
-                    parts[1],
-                    summary[key]
-
-                ];
-
-            });
-
-            const leftTable =
-            rows.map(r=>[
-
-                r.formattedDate,
-                r.item,
-                r.thickness,
-                r.quantity
-
-            ]);
-
-            doc.autoTable({
-
-                startY:48,
-
-                margin:{left:2},
-
-                head:[[
-                    'Date',
-                    'Items',
-                    'Thickness',
-                    'Qty'
-                ]],
-
-                body:leftTable,
-
-                tableWidth:160,
-
-                styles:{
-                    fontSize:9
-                },
-
-                headStyles:{
-                    fillColor:[21,94,166]
-                }
-
-            });
-
-            doc.autoTable({
-
-                startY:48,
-
-                margin:{left:163},
-
-                head:[[
-                    'Item Summary',
-                    'Thickness',
-                    'Total'
-                ]],
-
-                body:summaryRows,
-
-                tableWidth:130,
-
-                styles:{
-                    fontSize:9
-                },
-
-                headStyles:{
-                    fillColor:[190,24,93]
-                }
-
-            });
-
-            const blob =
-            doc.output('blob');
-
-            resolve(blob);
-
-        };
+        summary[key] +=
+        Number(r.quantity);
 
     });
+
+    const summaryRows =
+    Object.keys(summary)
+    .map(key=>{
+
+        const parts =
+        key.split('|');
+
+        return [
+
+            parts[0],
+            parts[1],
+            summary[key]
+
+        ];
+
+    });
+
+    const leftTable =
+    rows.map(r=>[
+
+        r.formattedDate,
+        r.item,
+        r.thickness,
+        r.quantity
+
+    ]);
+
+    doc.setFillColor(
+    10,56,104
+    );
+
+    doc.rect(
+    0,
+    0,
+    297,
+    28,
+    'F'
+    );
+
+    doc.setTextColor(
+    255,255,255
+    );
+
+    doc.setFontSize(26);
+
+    doc.setFont(
+    "helvetica",
+    "bold"
+    );
+
+    doc.text(
+        "SMS WORK REPORT",
+        148,
+        16,
+        {align:'center'}
+    );
+
+    doc.setTextColor(
+    0,0,0
+    );
+
+    doc.setFontSize(12);
+
+    doc.text(
+        "Section: " + section,
+        10,
+        38
+    );
+
+    doc.autoTable({
+
+        startY:48,
+
+        margin:{left:2},
+
+        head:[[
+            'Date',
+            'Items',
+            'Thickness',
+            'Qty'
+        ]],
+
+        body:leftTable,
+
+        tableWidth:160,
+
+        styles:{
+            fontSize:9
+        },
+
+        headStyles:{
+            fillColor:[21,94,166]
+        }
+
+    });
+
+    doc.autoTable({
+
+        startY:48,
+
+        margin:{left:163},
+
+        head:[[
+            'Item Summary',
+            'Thickness',
+            'Total'
+        ]],
+
+        body:summaryRows,
+
+        tableWidth:130,
+
+        styles:{
+            fontSize:9
+        },
+
+        headStyles:{
+            fillColor:[190,24,93]
+        }
+
+    });
+
+    return doc.output('blob');
 
 }
 
