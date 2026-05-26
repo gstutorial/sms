@@ -942,6 +942,7 @@ function createSectionPDF(doc, section, rows) {
 
     const fromDate = formatDisplayDate(document.getElementById('fromDate').value);
     const toDate = formatDisplayDate(document.getElementById('toDate').value);
+    const pageHeight = doc.internal.pageSize.height;
 
     // Sort rows consistently by Date
     rows.sort((a,b)=>{
@@ -963,28 +964,45 @@ function createSectionPDF(doc, section, rows) {
         return [p[0], p[1], summary[key]];
     });
 
-    // 2. Prepare Detail Table Data (Grouped by Date)
+    // 2. Prepare Detail Table Data (Grouped by Date utilizing rowSpan for centering)
+    const dateCounts = {};
+    rows.forEach(r => {
+        dateCounts[r.date] = (dateCounts[r.date] || 0) + 1;
+    });
+
     const bodyRows = [];
-    let currentGroup = 0;
+    let currentGroup = -1;
     let previousDate = '';
 
     rows.forEach(r => {
         let displayDate = formatDisplayDate(r.date.split('/').reverse().join('-'));
-        let dateVal = '';
 
         if (r.date !== previousDate) {
             currentGroup++;
-            dateVal = displayDate;
+            bodyRows.push({
+                row: [
+                    { content: displayDate, rowSpan: dateCounts[r.date], styles: { valign: 'middle', halign: 'center', fontStyle: 'bold' } },
+                    r.item,
+                    r.thickness,
+                    r.quantity
+                ],
+                group: currentGroup
+            });
             previousDate = r.date;
+        } else {
+            // jspdf-autotable requires omitting the merged cell entirely in subsequent rows
+            bodyRows.push({
+                row: [
+                    r.item,
+                    r.thickness,
+                    r.quantity
+                ],
+                group: currentGroup
+            });
         }
-
-        bodyRows.push({
-            row: [dateVal, r.item, r.thickness, r.qty],
-            group: currentGroup
-        });
     });
 
-    // --- DRAW PAGE HEADERS ---
+    // --- DRAW TOP PAGE HEADERS ---
     doc.setFillColor(5,10,35);
     doc.rect(0,0,297,36,'F');
 
@@ -1004,6 +1022,10 @@ function createSectionPDF(doc, section, rows) {
     doc.setTextColor(210,210,210);
     doc.text('App Created By Gobind Sharma', 148, 23, {align:'center'});
 
+    // Drop Shadow for Header Badge
+    doc.setFillColor(205, 210, 220);
+    doc.roundedRect(11, 45, 277, 24, 7, 7, 'F');
+    // Main Header Badge
     doc.setFillColor(15,25,55);
     doc.roundedRect(10, 44, 277, 24, 7, 7, 'F');
 
@@ -1020,24 +1042,37 @@ function createSectionPDF(doc, section, rows) {
     doc.text(fromDate, 118, 62);
     doc.text(toDate, 218, 62);
 
-    // Section Titles
+    // --- DRAW BACKGROUND CARDS (WITH SHADOWS) FOR TABLES ---
+    // Left Card Shadow & Main
+    doc.setFillColor(205, 210, 220);
+    doc.roundedRect(10, 76, 142, pageHeight - 90, 6, 6, 'F');
+    doc.setFillColor(248, 250, 255);
+    doc.roundedRect(8, 74, 142, pageHeight - 90, 6, 6, 'F');
+
+    // Right Card Shadow & Main
+    doc.setFillColor(205, 210, 220);
+    doc.roundedRect(160, 76, 128, pageHeight - 90, 6, 6, 'F');
+    doc.setFillColor(248, 250, 255);
+    doc.roundedRect(158, 74, 128, pageHeight - 90, 6, 6, 'F');
+
+    // Table Titles inside cards
     doc.setTextColor(25,35,55);
     doc.setFontSize(14);
-    doc.text('Detail Work Report', 10, 84);
-    doc.text('Item Summary', 160, 84);
+    doc.text('Detail Work Report', 14, 84);
+    doc.text('Item Summary', 164, 84);
 
     // --- DRAW DETAIL TABLE (LEFT SIDE) ---
     doc.autoTable({
-        startY: 90,
-        margin: { left: 10, right: 145 }, // Keeps it strictly on the left half
+        startY: 88,
+        margin: { left: 12, right: 151 }, // Confine to the left background card
         head: [['Date', 'Item Description', 'Thickness', 'Qty']],
         body: bodyRows.map(r => r.row),
         theme: 'grid',
         styles: {
             fontSize: 8.7,
             cellPadding: 4,
-            lineColor: [220, 220, 220],
-            lineWidth: 0.25,
+            lineColor: [200, 200, 200],
+            lineWidth: 0.1,
             valign: 'middle'
         },
         headStyles: {
@@ -1048,7 +1083,7 @@ function createSectionPDF(doc, section, rows) {
         },
         columnStyles: {
             0: { cellWidth: 28, halign: 'center', fontStyle: 'bold' },
-            1: { cellWidth: 70 },
+            1: { cellWidth: 67 },
             2: { cellWidth: 25, halign: 'center' },
             3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
         },
@@ -1056,57 +1091,44 @@ function createSectionPDF(doc, section, rows) {
             if (data.section === 'body') {
                 const rowData = bodyRows[data.row.index];
                 
-                // Alternate color purely by Date Group
-                const bgColor = rowData.group % 2 === 0 ? [248, 250, 255] : [238, 244, 255];
-                data.cell.styles.fillColor = bgColor;
+                // Highly distinct alternating row colors separated perfectly by date group
+                const bgColor = rowData.group % 2 === 0 ? [255, 255, 255] : [230, 240, 255]; 
                 
-                // Emulate merged cells by hiding the top border of empty date strings
-                if (data.column.index === 0 && rowData.row[0] === '') {
-                    data.cell.styles.textColor = bgColor; 
-                    data.cell.styles.lineWidth = { top: 0, bottom: 0, left: 0.25, right: 0.25 };
-                    
-                    // Restore bottom border if this is the last item in the group or table
-                    if (data.row.index === bodyRows.length - 1 || 
-                       (bodyRows[data.row.index + 1] && bodyRows[data.row.index + 1].row[0] !== '')) {
-                         data.cell.styles.lineWidth.bottom = 0.25;
-                    }
-                }
+                // Apply the grouped background color uniformly to all cells inside this date group
+                data.cell.styles.fillColor = bgColor;
             }
         }
     });
 
     // --- DRAW SUMMARY TABLE (RIGHT SIDE) ---
-    // Reset back to page 1 so side-by-side renders properly even if Detail Table created new pages.
-    doc.setPage(1); 
-
+    doc.setPage(1); // Reset back to page 1 to start drawing the right side
     doc.autoTable({
-        startY: 90,
-        margin: { left: 160, right: 10 }, // Keeps it strictly on the right half
+        startY: 88,
+        margin: { left: 162, right: 13 }, // Confine to the right background card
         head: [['Item Description', 'Thickness', 'Total Qty']],
         body: summaryRows,
         theme: 'grid',
         styles: {
             fontSize: 8.7,
             cellPadding: 4,
-            lineColor: [220, 220, 220],
-            lineWidth: 0.25,
+            lineColor: [200, 200, 200],
+            lineWidth: 0.1,
             valign: 'middle'
         },
         headStyles: {
-            fillColor: [124, 58, 237], // Purple Header for distinction
+            fillColor: [124, 58, 237], // Purple Header
             textColor: [255, 255, 255],
             fontStyle: 'bold',
             halign: 'center'
         },
         columnStyles: {
-            0: { cellWidth: 67 },
-            1: { cellWidth: 35, halign: 'center' },
+            0: { cellWidth: 65 },
+            1: { cellWidth: 32, halign: 'center' },
             2: { cellWidth: 25, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
             if (data.section === 'body') {
-                // Purple-tinted alternating rows
-                const bgColor = data.row.index % 2 === 0 ? [250, 248, 255] : [243, 238, 255]; 
+                const bgColor = data.row.index % 2 === 0 ? [255, 255, 255] : [240, 235, 255]; 
                 data.cell.styles.fillColor = bgColor;
             }
         }
@@ -1114,8 +1136,6 @@ function createSectionPDF(doc, section, rows) {
 
     // --- DRAW FOOTERS (ALL PAGES) ---
     const pageCount = doc.internal.getNumberOfPages();
-    const pageHeight = doc.internal.pageSize.height;
-    
     for (let i = 1; i <= pageCount; i++) {
         doc.setPage(i);
         doc.setDrawColor(220, 220, 220);
