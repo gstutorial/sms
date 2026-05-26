@@ -1268,52 +1268,36 @@ function createSectionPDF(doc,section,rows){
 
         },
 
-        didDrawCell:function(data){
+        didParseCell:function(data){
 
-            if(
-            data.section === 'body'
-            &&
-            data.column.index === 0
-            ){
+    if(
+    data.section === 'body'
+    &&
+    data.column.index === 0
+    ){
 
-                const row =
-                detailRows[data.row.index];
+        const row =
+        detailRows[data.row.index];
 
-                if(row.grouped){
+        if(row.grouped){
 
-                    doc.setFillColor(252,252,252);
+            data.cell.styles.textColor =
+            [255,255,255];
 
-                    doc.rect(
+            data.cell.styles.lineWidth = {
 
-                        data.cell.x,
-                        data.cell.y,
-                        data.cell.width,
-                        data.cell.height,
-                        'F'
+                top:0,
+                right:0.25,
+                bottom:0,
+                left:0.25
 
-                    );
-
-                    doc.setDrawColor(252,252,252);
-
-                    doc.line(
-
-                        data.cell.x,
-
-                        data.cell.y,
-
-                        data.cell.x +
-                        data.cell.width,
-
-                        data.cell.y
-
-                    );
-
-                }
-
-            }
+            };
 
         }
 
+    }
+
+}
     });
 
     /* MODERN FIXED SUMMARY CARD */
@@ -1322,7 +1306,7 @@ function createSectionPDF(doc,section,rows){
 
     summaryRows.forEach(r=>{
 
-        if(summaryY > 176){
+        if(summaryY > 182){
 
     doc.addPage();
 
@@ -1337,7 +1321,7 @@ function createSectionPDF(doc,section,rows){
             188,
             summaryY,
             94,
-            14,
+            11,
             3,
             3,
             'F'
@@ -1357,7 +1341,7 @@ String(r[0]),
         doc.text(
 itemText,
 191,
-summaryY + 5
+summaryY + 4
 );
 
         doc.setTextColor(90,90,90);
@@ -1367,7 +1351,7 @@ summaryY + 5
             r[1],
 
             245,
-            summaryY + 5
+            summaryY + 4
 
         );
 
@@ -1400,7 +1384,7 @@ summaryY + 5
 
         );
 
-        summaryY += 16;
+        summaryY += 13;
 
     });
 
