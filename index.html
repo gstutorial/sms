@@ -942,7 +942,10 @@ function createSectionPDF(doc, section, rows) {
 
     const fromDate = formatDisplayDate(document.getElementById('fromDate').value);
     const toDate = formatDisplayDate(document.getElementById('toDate').value);
-    const pageHeight = doc.internal.pageSize.height;
+
+    // Track the start page for THIS specific section.
+    // This perfectly fixes the missing summary table issue on multi-section PDFs.
+    const startPage = doc.internal.getCurrentPageInfo().pageNumber;
 
     // Sort rows consistently by Date
     rows.sort((a,b)=>{
@@ -1002,69 +1005,10 @@ function createSectionPDF(doc, section, rows) {
         }
     });
 
-    // --- DRAW TOP PAGE HEADERS ---
-    doc.setFillColor(5,10,35);
-    doc.rect(0,0,297,36,'F');
-
-    try {
-        const img = document.querySelector('.logo');
-        if(img) {
-            doc.addImage(img, 'PNG', 10, 5, 22, 22);
-        }
-    } catch(e) {}
-
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(24);
-    doc.setFont('helvetica', 'bold');
-    doc.text('SMS WORK REPORT', 148, 15, {align:'center'});
-
-    doc.setFontSize(10);
-    doc.setTextColor(210,210,210);
-    doc.text('App Created By Gobind Sharma', 148, 23, {align:'center'});
-
-    // Drop Shadow for Header Badge
-    doc.setFillColor(205, 210, 220);
-    doc.roundedRect(11, 45, 277, 24, 7, 7, 'F');
-    // Main Header Badge
-    doc.setFillColor(15,25,55);
-    doc.roundedRect(10, 44, 277, 24, 7, 7, 'F');
-
-    doc.setTextColor(180,190,210);
-    doc.setFontSize(9);
-    doc.text('SECTION', 18, 52);
-    doc.text('FROM DATE', 118, 52);
-    doc.text('TO DATE', 218, 52);
-
-    doc.setTextColor(255,255,255);
-    doc.setFontSize(14);
-    doc.setFont('helvetica', 'bold');
-    doc.text(section, 18, 62);
-    doc.text(fromDate, 118, 62);
-    doc.text(toDate, 218, 62);
-
-    // --- DRAW BACKGROUND CARDS (WITH SHADOWS) FOR TABLES ---
-    // Left Card Shadow & Main
-    doc.setFillColor(205, 210, 220);
-    doc.roundedRect(10, 76, 142, pageHeight - 90, 6, 6, 'F');
-    doc.setFillColor(248, 250, 255);
-    doc.roundedRect(8, 74, 142, pageHeight - 90, 6, 6, 'F');
-
-    // Right Card Shadow & Main
-    doc.setFillColor(205, 210, 220);
-    doc.roundedRect(160, 76, 128, pageHeight - 90, 6, 6, 'F');
-    doc.setFillColor(248, 250, 255);
-    doc.roundedRect(158, 74, 128, pageHeight - 90, 6, 6, 'F');
-
-    // Table Titles inside cards
-    doc.setTextColor(25,35,55);
-    doc.setFontSize(14);
-    doc.text('Detail Work Report', 14, 84);
-    doc.text('Item Summary', 164, 84);
-
     // --- DRAW DETAIL TABLE (LEFT SIDE) ---
     doc.autoTable({
-        startY: 88,
-        margin: { left: 12, right: 151 }, // Confine to the left background card
+        startY: 50,
+        margin: { top: 50, bottom: 15, left: 12, right: 151 }, 
         head: [['Date', 'Item Description', 'Thickness', 'Qty']],
         body: bodyRows.map(r => r.row),
         theme: 'grid',
@@ -1090,21 +1034,20 @@ function createSectionPDF(doc, section, rows) {
         didParseCell: function(data) {
             if (data.section === 'body') {
                 const rowData = bodyRows[data.row.index];
-                
                 // Highly distinct alternating row colors separated perfectly by date group
                 const bgColor = rowData.group % 2 === 0 ? [255, 255, 255] : [230, 240, 255]; 
-                
-                // Apply the grouped background color uniformly to all cells inside this date group
                 data.cell.styles.fillColor = bgColor;
             }
         }
     });
 
     // --- DRAW SUMMARY TABLE (RIGHT SIDE) ---
-    doc.setPage(1); // Reset back to page 1 to start drawing the right side
+    // Safely reset back to the page where THIS section started
+    doc.setPage(startPage); 
+
     doc.autoTable({
-        startY: 88,
-        margin: { left: 162, right: 13 }, // Confine to the right background card
+        startY: 50,
+        margin: { top: 50, bottom: 15, left: 162, right: 13 },
         head: [['Item Description', 'Thickness', 'Total Qty']],
         body: summaryRows,
         theme: 'grid',
@@ -1134,14 +1077,65 @@ function createSectionPDF(doc, section, rows) {
         }
     });
 
-    // --- DRAW FOOTERS (ALL PAGES) ---
-    const pageCount = doc.internal.getNumberOfPages();
-    for (let i = 1; i <= pageCount; i++) {
+    // --- DRAW HEADERS AND FOOTERS (ON ALL PAGES FOR THIS SECTION) ---
+    const endPage = doc.internal.getNumberOfPages();
+    const pageHeight = doc.internal.pageSize.height;
+    
+    for (let i = startPage; i <= endPage; i++) {
         doc.setPage(i);
+        
+        // 1. Draw Linear Gradient Header Banner
+        const headerHeight = 36;
+        for (let y = 0; y <= headerHeight; y += 0.5) {
+            // Gradient from Dark Blue (15,23,42) to Blue-Green (13,148,136)
+            let ratio = y / headerHeight;
+            let r = Math.round(15 + (13 - 15) * ratio);
+            let g = Math.round(23 + (148 - 23) * ratio);
+            let b = Math.round(42 + (136 - 42) * ratio);
+            doc.setFillColor(r, g, b);
+            doc.rect(0, y, 297, 0.6, 'F'); // 0.6 overlap prevents white lines
+        }
+
+        // 2. Add Logo
+        try {
+            const img = document.querySelector('.logo');
+            if(img) {
+                doc.addImage(img, 'PNG', 12, 4, 28, 28);
+            }
+        } catch(e) {}
+
+        // 3. Add Titles and Single Line Info
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('SMS WORK REPORT', 148, 14, {align:'center'});
+
+        doc.setFontSize(9);
+        doc.setTextColor(220, 230, 240);
+        doc.setFont('helvetica', 'normal');
+        doc.text('App Created By Gobind Sharma', 148, 20, {align:'center'});
+
+        // Single line Section and Dates
+        doc.setFontSize(11);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
+        doc.text(infoText, 148, 30, {align:'center'});
+
+        // 4. Add Table Titles
+        doc.setTextColor(25, 35, 55);
+        doc.setFontSize(14);
+        doc.setFont('helvetica', 'bold');
+        doc.text('Detail Work Report', 14, 46);
+        doc.text('Item Summary', 164, 46);
+
+        // 5. Add Footer
         doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.5);
         doc.line(10, pageHeight - 10, 287, pageHeight - 10);
         doc.setFontSize(9);
         doc.setTextColor(120, 120, 120);
+        doc.setFont('helvetica', 'normal');
         doc.text('Indian Railway Work Report System', 148, pageHeight - 4, { align: 'center' });
     }
 }
