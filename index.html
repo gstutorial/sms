@@ -929,6 +929,8 @@ function createSectionPDF(doc,section,rows){
 
     });
 
+    /* SUMMARY */
+
     const summary = {};
 
     rows.forEach(r=>{
@@ -962,21 +964,23 @@ function createSectionPDF(doc,section,rows){
 
     });
 
+    /* BETTER DATE GROUPING */
+
     const detailRows = [];
 
     let lastDate='';
 
     rows.forEach(r=>{
 
-        let dateText='';
+        let dateText = r.date;
 
-        if(r.date !== lastDate){
+        if(r.date === lastDate){
 
-            dateText = r.date;
-
-            lastDate = r.date;
+            dateText = '↳';
 
         }
+
+        lastDate = r.date;
 
         detailRows.push([
 
@@ -991,9 +995,9 @@ function createSectionPDF(doc,section,rows){
 
     /* HEADER */
 
-    doc.setFillColor(15,23,42);
+    doc.setFillColor(8,15,35);
 
-    doc.rect(0,0,297,38,'F');
+    doc.rect(0,0,297,34,'F');
 
     try{
 
@@ -1004,9 +1008,9 @@ function createSectionPDF(doc,section,rows){
         img,
         'PNG',
         10,
-        7,
-        20,
-        20
+        5,
+        22,
+        22
         );
 
     }catch(e){}
@@ -1015,29 +1019,36 @@ function createSectionPDF(doc,section,rows){
 
     doc.setFontSize(24);
 
+    doc.setFont(
+    'helvetica',
+    'bold'
+    );
+
     doc.text(
     'SMS WORK REPORT',
     148,
-    15,
+    14,
     {align:'center'}
     );
 
     doc.setFontSize(10);
 
+    doc.setTextColor(210,210,210);
+
     doc.text(
     'App Created By Gobind Sharma',
     148,
-    23,
+    22,
     {align:'center'}
     );
 
-    /* HEADER CARDS */
+    /* DARK INFO CARD */
 
-    doc.setFillColor(30,41,59);
+    doc.setFillColor(20,30,55);
 
     doc.roundedRect(
     10,
-    45,
+    42,
     277,
     24,
     6,
@@ -1045,27 +1056,29 @@ function createSectionPDF(doc,section,rows){
     'F'
     );
 
-    doc.setTextColor(255,255,255);
+    doc.setTextColor(180,190,210);
 
-    doc.setFontSize(11);
+    doc.setFontSize(9);
 
     doc.text(
     'SECTION',
     18,
-    54
+    50
     );
 
     doc.text(
     'FROM DATE',
-    120,
-    54
+    118,
+    50
     );
 
     doc.text(
     'TO DATE',
-    220,
-    54
+    218,
+    50
     );
+
+    doc.setTextColor(255,255,255);
 
     doc.setFontSize(14);
 
@@ -1077,66 +1090,68 @@ function createSectionPDF(doc,section,rows){
     doc.text(
     section,
     18,
-    64
+    60
     );
 
     doc.text(
     fromDate,
-    120,
-    64
+    118,
+    60
     );
 
     doc.text(
     toDate,
-    220,
-    64
+    218,
+    60
     );
 
-    /* TABLE CARDS */
+    /* CARD BACKGROUNDS */
 
-    doc.setFillColor(248,250,252);
+    doc.setFillColor(245,247,250);
 
     doc.roundedRect(
     8,
-    76,
+    74,
     168,
-    118,
-    6,
-    6,
+    115,
+    8,
+    8,
     'F'
     );
 
     doc.roundedRect(
     182,
-    76,
+    74,
     107,
-    118,
-    6,
-    6,
+    115,
+    8,
+    8,
     'F'
     );
 
-    doc.setTextColor(30,41,59);
+    /* CARD TITLES */
+
+    doc.setTextColor(25,35,55);
 
     doc.setFontSize(14);
 
     doc.text(
     'Detail Work Report',
     14,
-    86
+    84
     );
 
     doc.text(
     'Item Summary',
     188,
-    86
+    84
     );
 
     /* DETAIL TABLE */
 
     doc.autoTable({
 
-        startY:92,
+        startY:90,
 
         margin:{left:12},
 
@@ -1144,7 +1159,7 @@ function createSectionPDF(doc,section,rows){
 
         head:[[
             'Date',
-            'Item',
+            'Item Description',
             'Thickness',
             'Qty'
         ]],
@@ -1155,21 +1170,15 @@ function createSectionPDF(doc,section,rows){
 
         styles:{
 
-            fontSize:9,
+            fontSize:8.7,
 
             cellPadding:4,
 
-            valign:'middle',
+            lineColor:[225,225,225],
 
-            lineColor:[230,230,230],
+            lineWidth:0.3,
 
-            lineWidth:0.3
-
-        },
-
-        alternateRowStyles:{
-
-            fillColor:[248,250,252]
+            valign:'middle'
 
         },
 
@@ -1177,31 +1186,71 @@ function createSectionPDF(doc,section,rows){
 
             fillColor:[37,99,235],
 
-            halign:'center',
+            textColor:[255,255,255],
 
-            fontStyle:'bold'
+            fontStyle:'bold',
+
+            halign:'center'
+
+        },
+
+        alternateRowStyles:{
+
+            fillColor:[252,252,252]
 
         },
 
         columnStyles:{
 
             0:{
+
+                cellWidth:26,
+
                 halign:'center',
-                cellWidth:30
+
+                fontStyle:'bold'
+
             },
 
             1:{
-                cellWidth:78
+
+                cellWidth:86
+
             },
 
             2:{
-                halign:'center',
-                cellWidth:28
+
+                cellWidth:28,
+
+                halign:'center'
+
             },
 
             3:{
+
+                cellWidth:20,
+
                 halign:'center',
-                cellWidth:20
+
+                fontStyle:'bold'
+
+            }
+
+        },
+
+        didParseCell:function(data){
+
+            if(
+            data.column.index === 0 &&
+            data.cell.raw === '↳'
+            ){
+
+                data.cell.styles.textColor =
+                [120,120,120];
+
+                data.cell.styles.fontStyle =
+                'bold';
+
             }
 
         }
@@ -1212,7 +1261,7 @@ function createSectionPDF(doc,section,rows){
 
     doc.autoTable({
 
-        startY:92,
+        startY:90,
 
         margin:{left:186},
 
@@ -1230,19 +1279,15 @@ function createSectionPDF(doc,section,rows){
 
         styles:{
 
-            fontSize:9,
+            fontSize:8.5,
 
             cellPadding:4,
 
-            lineColor:[230,230,230],
+            lineColor:[225,225,225],
 
-            lineWidth:0.3
+            lineWidth:0.3,
 
-        },
-
-        alternateRowStyles:{
-
-            fillColor:[248,250,252]
+            valign:'middle'
 
         },
 
@@ -1250,34 +1295,67 @@ function createSectionPDF(doc,section,rows){
 
             fillColor:[124,58,237],
 
-            halign:'center',
+            textColor:[255,255,255],
 
-            fontStyle:'bold'
+            fontStyle:'bold',
+
+            halign:'center'
+
+        },
+
+        alternateRowStyles:{
+
+            fillColor:[252,252,252]
 
         },
 
         columnStyles:{
 
             0:{
-                cellWidth:58
+                cellWidth:60
             },
 
             1:{
-                halign:'center',
-                cellWidth:18
+                cellWidth:18,
+                halign:'center'
             },
 
             2:{
+                cellWidth:18,
                 halign:'center',
-                cellWidth:18
+                fontStyle:'bold'
             }
 
         }
 
     });
 
-}
+    /* FOOTER */
 
+    const pageHeight =
+    doc.internal.pageSize.height;
+
+    doc.setDrawColor(220,220,220);
+
+    doc.line(
+    10,
+    pageHeight-10,
+    287,
+    pageHeight-10
+    );
+
+    doc.setFontSize(9);
+
+    doc.setTextColor(120,120,120);
+
+    doc.text(
+    'Indian Railway Work Report System',
+    148,
+    pageHeight-4,
+    {align:'center'}
+    );
+
+}
 async function createPDF(section){
 
     const { jsPDF } =
