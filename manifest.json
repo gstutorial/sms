@@ -1,0 +1,21 @@
+{
+  "name": "SMS Work Report Generator",
+  "short_name": "Work Report",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#2563eb",
+  "description": "Generate Section Wise Work Reports for Indian Railways",
+  "icons": [
+    {
+      "src": "sms.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "sms.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
