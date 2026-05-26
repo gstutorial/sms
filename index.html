@@ -537,7 +537,7 @@ App Created By Gobind Sharma
 <script>
 
 const SHEET_URL =
-'https://docs.google.com/spreadsheets/d/1OP1z06rCpFMTRiAwncFIWuHK_rB2y0acy3KDVDnZGvA/gviz/tq?tqx=out:json';
+'https://docs.google.com/spreadsheets/d/1OP1z06rCpFMTRiAwncFIWuHK_rB2y0acy3KDVDnZGvA/export?format=csv&gid=0';
 
 let sectionData = {};
 
@@ -575,50 +575,6 @@ function showToast(message,type='info'){
 
 }
 
-function parseGoogleDate(value){
-
-    if(!value) return null;
-
-    const str =
-    String(value);
-
-    const match =
-    str.match(
-    /Date\((\d+),(\d+),(\d+)\)/
-    );
-
-    if(match){
-
-        return new Date(
-
-            Number(match[1]),
-            Number(match[2]),
-            Number(match[3])
-
-        );
-
-    }
-
-    return null;
-
-}
-
-function formatDisplayDate(date){
-
-    return String(date.getDate())
-    .padStart(2,'0')
-
-    + '/' +
-
-    String(date.getMonth()+1)
-    .padStart(2,'0')
-
-    + '/' +
-
-    date.getFullYear();
-
-}
-
 function monthName(date){
 
     return date.toLocaleString(
@@ -633,43 +589,57 @@ async function fetchSheetData(){
     const response =
     await fetch(SHEET_URL);
 
-    const text =
+    const csv =
     await response.text();
 
-    const json =
-    JSON.parse(
-        text.substring(47).slice(0,-2)
-    );
+    const lines =
+    csv.split('\n');
 
-    const rows =
-    json.table.rows;
+    const data = [];
 
-    return rows.map(row=>({
+    for(let i=1;i<lines.length;i++){
 
-        rawDate:
-        row.c[0]?.v || '',
+        const row =
+        lines[i].split(',');
 
-        section:
-        String(
-        row.c[1]?.v || ''
-        ).trim(),
+        if(row.length >= 5){
 
-        item:
-        String(
-        row.c[2]?.v || ''
-        ).trim(),
+            data.push({
 
-        quantity:
-        Number(
-        row.c[3]?.v || 0
-        ),
+                date:
+                row[0]
+                .replace(/"/g,'')
+                .trim(),
 
-        thickness:
-        String(
-        row.c[4]?.v || ''
-        ).trim()
+                section:
+                row[1]
+                .replace(/"/g,'')
+                .trim(),
 
-    }));
+                item:
+                row[2]
+                .replace(/"/g,'')
+                .trim(),
+
+                quantity:
+                Number(
+                row[3]
+                .replace(/"/g,'')
+                .trim()
+                ),
+
+                thickness:
+                row[4]
+                .replace(/"/g,'')
+                .trim()
+
+            });
+
+        }
+
+    }
+
+    return data;
 
 }
 
@@ -728,12 +698,22 @@ async function generateReports(){
 
         rows.forEach(row=>{
 
-            const rowDate =
-            parseGoogleDate(
-            row.rawDate
-            );
+            if(!row.date) return;
 
-            if(!rowDate) return;
+            const parts =
+            row.date.split('/');
+
+            if(parts.length !== 3)
+            return;
+
+            const rowDate =
+            new Date(
+
+                Number(parts[2]),
+                Number(parts[1])-1,
+                Number(parts[0])
+
+            );
 
             if(
             rowDate >= from &&
@@ -759,9 +739,7 @@ async function generateReports(){
                     ...row,
 
                     formattedDate:
-                    formatDisplayDate(
-                    rowDate
-                    )
+                    row.date
 
                 });
 
