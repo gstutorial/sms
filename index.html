@@ -626,6 +626,33 @@ function showToast(message){
 
 }
 
+function formatDisplayDate(dateString){
+
+    const date =
+    new Date(dateString);
+
+    const months = [
+
+        'Jan','Feb','Mar',
+        'Apr','May','Jun',
+        'Jul','Aug','Sep',
+        'Oct','Nov','Dec'
+
+    ];
+
+    return String(date.getDate())
+    .padStart(2,'0')
+
+    + '-'
+
+    + months[date.getMonth()]
+
+    + '-'
+
+    + date.getFullYear();
+
+}
+
 async function fetchSheetData(){
 
     const response =
@@ -910,32 +937,6 @@ function renderCards(){
     });
 
 }
-    function formatDisplayDate(dateString){
-
-    const date =
-    new Date(dateString);
-
-    const months = [
-
-        'Jan','Feb','Mar',
-        'Apr','May','Jun',
-        'Jul','Aug','Sep',
-        'Oct','Nov','Dec'
-
-    ];
-
-    return String(date.getDate())
-    .padStart(2,'0')
-
-    + '-'
-
-    + months[date.getMonth()]
-
-    + '-'
-
-    + date.getFullYear();
-
-}
 
 function createSectionPDF(doc,section,rows){
 
@@ -958,8 +959,6 @@ function createSectionPDF(doc,section,rows){
         new Date(pb[2],pb[1]-1,pb[0]);
 
     });
-
-    /* SUMMARY */
 
     const summary = {};
 
@@ -994,8 +993,6 @@ function createSectionPDF(doc,section,rows){
 
     });
 
-    /* DATE GROUPING */
-
     const detailRows = [];
 
     let previousDate='';
@@ -1008,20 +1005,16 @@ function createSectionPDF(doc,section,rows){
         detailRows.push({
 
             date:showDate
-? formatDisplayDate(
-
-    r.date.split('/').reverse().join('-')
-
-)
-: '',
+            ? formatDisplayDate(
+                r.date.split('/').reverse().join('-')
+              )
+            : '',
 
             item:r.item,
 
             thickness:r.thickness,
 
-            qty:r.quantity,
-
-            grouped:!showDate
+            qty:r.quantity
 
         });
 
@@ -1029,11 +1022,9 @@ function createSectionPDF(doc,section,rows){
 
     });
 
-    /* HEADER */
+    doc.setFillColor(5,10,35);
 
-    doc.setFillColor(8,15,35);
-
-    doc.rect(0,0,297,34,'F');
+    doc.rect(0,0,297,36,'F');
 
     try{
 
@@ -1063,7 +1054,7 @@ function createSectionPDF(doc,section,rows){
     doc.text(
     'SMS WORK REPORT',
     148,
-    14,
+    15,
     {align:'center'}
     );
 
@@ -1074,21 +1065,19 @@ function createSectionPDF(doc,section,rows){
     doc.text(
     'App Created By Gobind Sharma',
     148,
-    22,
+    23,
     {align:'center'}
     );
 
-    /* INFO CARD */
-
-    doc.setFillColor(20,30,55);
+    doc.setFillColor(15,25,55);
 
     doc.roundedRect(
     10,
-    42,
+    44,
     277,
     24,
-    6,
-    6,
+    7,
+    7,
     'F'
     );
 
@@ -1099,19 +1088,19 @@ function createSectionPDF(doc,section,rows){
     doc.text(
     'SECTION',
     18,
-    50
+    52
     );
 
     doc.text(
     'FROM DATE',
     118,
-    50
+    52
     );
 
     doc.text(
     'TO DATE',
     218,
-    50
+    52
     );
 
     doc.setTextColor(255,255,255);
@@ -1126,30 +1115,28 @@ function createSectionPDF(doc,section,rows){
     doc.text(
     section,
     18,
-    60
+    62
     );
 
     doc.text(
     fromDate,
     118,
-    60
+    62
     );
 
     doc.text(
     toDate,
     218,
-    60
+    62
     );
 
-    /* BACKGROUND CARDS */
-
-    doc.setFillColor(245,247,250);
+    doc.setFillColor(238,242,247);
 
     doc.roundedRect(
     8,
     74,
     168,
-    115,
+    116,
     8,
     8,
     'F'
@@ -1159,13 +1146,11 @@ function createSectionPDF(doc,section,rows){
     182,
     74,
     107,
-    115,
+    116,
     8,
     8,
     'F'
     );
-
-    /* TITLES */
 
     doc.setTextColor(25,35,55);
 
@@ -1183,7 +1168,34 @@ function createSectionPDF(doc,section,rows){
     84
     );
 
-    /* DETAIL TABLE */
+    let currentGroup = 0;
+
+    const bodyRows = [];
+
+    detailRows.forEach(r=>{
+
+        if(r.date !== ''){
+
+            currentGroup++;
+
+        }
+
+        bodyRows.push({
+
+            row:[
+
+                r.date,
+                r.item,
+                r.thickness,
+                r.qty
+
+            ],
+
+            group:currentGroup
+
+        });
+
+    });
 
     doc.autoTable({
 
@@ -1200,14 +1212,7 @@ function createSectionPDF(doc,section,rows){
             'Qty'
         ]],
 
-        body:detailRows.map(r=>[
-
-            r.date,
-            r.item,
-            r.thickness,
-            r.qty
-
-        ]),
+        body:bodyRows.map(r=>r.row),
 
         theme:'grid',
 
@@ -1217,7 +1222,7 @@ function createSectionPDF(doc,section,rows){
 
             cellPadding:4,
 
-            lineColor:[225,225,225],
+            lineColor:[220,220,220],
 
             lineWidth:0.25,
 
@@ -1237,22 +1242,16 @@ function createSectionPDF(doc,section,rows){
 
         },
 
-        alternateRowStyles:{
-
-            fillColor:[252,252,252]
-
-        },
-
         columnStyles:{
 
             0:{
-                cellWidth:28,
+                cellWidth:30,
                 halign:'center',
                 fontStyle:'bold'
             },
 
             1:{
-                cellWidth:84
+                cellWidth:82
             },
 
             2:{
@@ -1270,49 +1269,50 @@ function createSectionPDF(doc,section,rows){
 
         didParseCell:function(data){
 
-    if(
-    data.section === 'body'
-    &&
-    data.column.index === 0
-    ){
+            if(data.section === 'body'){
 
-        const row =
-        detailRows[data.row.index];
+                const rowData =
+                bodyRows[data.row.index];
 
-        if(row.grouped){
+                const bgColor =
+                rowData.group % 2 === 0
+                ? [248,250,255]
+                : [238,244,255];
 
-            data.cell.styles.textColor =
-            [255,255,255];
+                data.cell.styles.fillColor =
+                bgColor;
 
-            data.cell.styles.lineWidth = {
+                if(
+                data.column.index === 0
+                &&
+                rowData.row[0] === ''
+                ){
 
-                top:0,
-                right:0.25,
-                bottom:0,
-                left:0.25
+                    data.cell.styles.textColor =
+                    bgColor;
 
-            };
+                    data.cell.styles.lineWidth = {
+
+                        top:0,
+                        bottom:0,
+                        left:0.25,
+                        right:0.25
+
+                    };
+
+                }
+
+            }
 
         }
 
-    }
-
-}
     });
 
-    /* MODERN FIXED SUMMARY CARD */
-
-    let summaryY = 92;
+    let summaryY = 90;
 
     summaryRows.forEach(r=>{
 
-        if(summaryY > 182){
-
-    doc.addPage();
-
-    summaryY = 20;
-
-}
+        if(summaryY > 178) return;
 
         doc.setFillColor(255,255,255);
 
@@ -1330,19 +1330,22 @@ function createSectionPDF(doc,section,rows){
 
         doc.setTextColor(35,35,35);
 
-        doc.setFontSize(8);
+        doc.setFontSize(7.5);
 
         const itemText =
-doc.splitTextToSize(
-String(r[0]),
-48
-);
+        doc.splitTextToSize(
+        String(r[0]),
+        44
+        );
 
         doc.text(
-itemText,
-191,
-summaryY + 4
-);
+
+            itemText,
+
+            191,
+            summaryY + 4
+
+        );
 
         doc.setTextColor(90,90,90);
 
@@ -1362,7 +1365,7 @@ summaryY + 4
             262,
             summaryY + 2,
             15,
-            8,
+            7,
             2,
             2,
             'F'
@@ -1371,14 +1374,14 @@ summaryY + 4
 
         doc.setTextColor(255,255,255);
 
-        doc.setFontSize(8);
+        doc.setFontSize(7.5);
 
         doc.text(
 
             String(r[2]),
 
             269.5,
-            summaryY + 7,
+            summaryY + 6,
 
             {align:'center'}
 
@@ -1387,8 +1390,6 @@ summaryY + 4
         summaryY += 13;
 
     });
-
-    /* FOOTER */
 
     const pageHeight =
     doc.internal.pageSize.height;
@@ -1414,6 +1415,7 @@ summaryY + 4
     );
 
 }
+
 async function createPDF(section){
 
     const { jsPDF } =
