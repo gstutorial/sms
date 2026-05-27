@@ -106,7 +106,6 @@ body{
     font-weight:700;
 }
 
-/* --- CUSTOM DATE PICKER STYLES --- */
 .date-wrapper {
     position: relative;
     display: flex;
@@ -119,15 +118,15 @@ body{
 .date-icon {
     position: absolute;
     left: 14px;
-    color: #6366f1; /* Theme matching purple/blue */
+    color: #6366f1; 
     display: flex;
     align-items: center;
-    pointer-events: none; /* Let clicks pass through to the input */
+    pointer-events: none; 
 }
 
 .date-input {
     width: 100%;
-    padding: 13px 13px 13px 44px; /* Added left padding for the icon */
+    padding: 13px 13px 13px 44px; 
     border: none;
     background: transparent;
     font-size: 14px;
@@ -137,7 +136,6 @@ body{
     outline: none;
 }
 
-/* Hack to make the native calendar picker cover the entire box on Webkit browsers */
 .date-input::-webkit-calendar-picker-indicator {
     background: transparent;
     color: transparent;
@@ -151,7 +149,6 @@ body{
     bottom: 0;
     opacity: 0;
 }
-/* ------------------------------------ */
 
 .action-buttons{
     display:flex;
@@ -836,7 +833,11 @@ function createSectionPDF(doc, section, rows) {
             3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
-            if (data.section === 'head') { data.cell.styles.fillColor = null; }
+            // Remove header cell partitions by removing the border in head section
+            if (data.section === 'head') { 
+                data.cell.styles.fillColor = null; 
+                data.cell.styles.lineWidth = 0; 
+            }
             if (data.section === 'body') {
                 const rowData = bodyRows[data.row.index];
                 const bgColor = rowData.group % 2 === 0 ? [255, 255, 255] : [235, 243, 255]; 
@@ -844,16 +845,20 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
-            // UPDATED: Table Header Slate-Blue Gradient
+            // Main Table Header Gradient (Blue to Cyan) spanning the entire table width seamlessly
             if (data.section === 'head') {
-                const { x, y, width, height } = data.cell;
-                for (let i = 0; i <= width; i += 1) { 
-                    let ratio = i / width;
-                    let r = Math.round(44 + (30 - 44) * ratio); // Slate Blue
-                    let g = Math.round(62 + (41 - 62) * ratio);
-                    let b = Math.round(80 + (59 - 80) * ratio);
+                let tableX = 3;
+                let tableW = 120; // total width of the main table
+                let relativeX = data.cell.x - tableX;
+                
+                for (let i = 0; i <= data.cell.width; i += 0.5) { 
+                    let ratio = (relativeX + i) / tableW;
+                    ratio = Math.max(0, Math.min(1, ratio));
+                    let r = Math.round(37 + (6 - 37) * ratio); // 2563eb to 06b6d4
+                    let g = Math.round(99 + (182 - 99) * ratio);
+                    let b = Math.round(235 + (212 - 235) * ratio);
                     doc.setFillColor(r, g, b);
-                    doc.rect(x + i, y, 1.5, height, 'F');
+                    doc.rect(data.cell.x + i, data.cell.y, 1, data.cell.height, 'F');
                 }
             }
         }
@@ -875,23 +880,31 @@ function createSectionPDF(doc, section, rows) {
             2: { cellWidth: 17, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
-            if (data.section === 'head') { data.cell.styles.fillColor = null; }
+            // Remove header cell partitions
+            if (data.section === 'head') { 
+                data.cell.styles.fillColor = null; 
+                data.cell.styles.lineWidth = 0;
+            }
             if (data.section === 'body') {
                 const bgColor = data.row.index % 2 === 0 ? [255, 255, 255] : [240, 248, 245]; 
                 data.cell.styles.fillColor = bgColor;
             }
         },
         willDrawCell: function(data) {
-            // UPDATED: Table Header Slate-Blue Gradient
+            // Summary Table Header Gradient (Teal to Emerald Green) spanning seamlessly
             if (data.section === 'head') {
-                const { x, y, width, height } = data.cell;
-                for (let i = 0; i <= width; i += 1) { 
-                    let ratio = i / width;
-                    let r = Math.round(44 + (30 - 44) * ratio); // Slate Blue
-                    let g = Math.round(62 + (41 - 62) * ratio);
-                    let b = Math.round(80 + (59 - 80) * ratio);
+                let tableX = 126;
+                let tableW = 81; // total width of the summary table
+                let relativeX = data.cell.x - tableX;
+
+                for (let i = 0; i <= data.cell.width; i += 0.5) { 
+                    let ratio = (relativeX + i) / tableW;
+                    ratio = Math.max(0, Math.min(1, ratio));
+                    let r = Math.round(15 + (20 - 15) * ratio); // Teal to Emerald
+                    let g = Math.round(118 + (184 - 118) * ratio);
+                    let b = Math.round(110 + (166 - 110) * ratio);
                     doc.setFillColor(r, g, b);
-                    doc.rect(x + i, y, 1.5, height, 'F');
+                    doc.rect(data.cell.x + i, data.cell.y, 1, data.cell.height, 'F');
                 }
             }
         }
@@ -903,7 +916,7 @@ function createSectionPDF(doc, section, rows) {
     for (let i = startPage; i <= endPage; i++) {
         doc.setPage(i);
         
-        // UPDATED: Darker Blue Header Gradient
+        // Darker Professional Blue Header Gradient
         const headerHeight = 30;
         for (let y = 0; y <= headerHeight; y += 0.5) {
             let ratio = y / headerHeight;
@@ -912,18 +925,6 @@ function createSectionPDF(doc, section, rows) {
             let b = Math.round(40 + (110 - 40) * ratio);
             doc.setFillColor(r, g, b);
             doc.rect(0, y, 210, 0.6, 'F'); 
-        }
-
-        // UPDATED: Bottom Footer Gradient (Matching Header)
-        const footerHeight = 12;
-        const footerY = pageHeight - footerHeight;
-        for (let y = 0; y <= footerHeight; y += 0.5) {
-            let ratio = y / footerHeight;
-            let r = Math.round(10 + (22 - 10) * ratio);
-            let g = Math.round(20 + (45 - 20) * ratio);
-            let b = Math.round(40 + (110 - 40) * ratio);
-            doc.setFillColor(r, g, b);
-            doc.rect(0, footerY + y, 210, 0.6, 'F'); 
         }
 
         try {
@@ -947,7 +948,22 @@ function createSectionPDF(doc, section, rows) {
         const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
         doc.text(infoText, 105, 25, {align:'center'});
 
-        // UPDATED: Footer text with contrasting color
+        // Bottom Footer Gradient matching the header theme
+        const footerHeight = 12;
+        const footerY = pageHeight - footerHeight;
+        for (let y = 0; y <= footerHeight; y += 0.5) {
+            let ratio = y / footerHeight;
+            let r = Math.round(10 + (22 - 10) * ratio);
+            let g = Math.round(20 + (45 - 20) * ratio);
+            let b = Math.round(40 + (110 - 40) * ratio);
+            doc.setFillColor(r, g, b);
+            doc.rect(0, footerY + y, 210, 0.6, 'F'); 
+        }
+
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.5);
+        doc.line(3, footerY - 2, 207, footerY - 2);
+
         doc.setFontSize(9);
         doc.setTextColor(230, 240, 250);
         doc.setFont('helvetica', 'normal');
