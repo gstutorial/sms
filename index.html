@@ -119,15 +119,15 @@ body{
 .date-icon {
     position: absolute;
     left: 14px;
-    color: #6366f1; /* Theme matching purple/blue */
+    color: #6366f1;
     display: flex;
     align-items: center;
-    pointer-events: none; /* Let clicks pass through to the input */
+    pointer-events: none;
 }
 
 .date-input {
     width: 100%;
-    padding: 13px 13px 13px 44px; /* Added left padding for the icon */
+    padding: 13px 13px 13px 44px;
     border: none;
     background: transparent;
     font-size: 14px;
@@ -137,7 +137,6 @@ body{
     outline: none;
 }
 
-/* Hack to make the native calendar picker cover the entire box on Webkit browsers */
 .date-input::-webkit-calendar-picker-indicator {
     background: transparent;
     color: transparent;
@@ -828,7 +827,6 @@ function createSectionPDF(doc, section, rows) {
         body: bodyRows.map(r => r.row),
         theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1, valign: 'middle' },
-        // Added lineWidth: 0 to remove table header cell divisions
         headStyles: { textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center', lineWidth: 0 },
         columnStyles: {
             0: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
@@ -839,7 +837,7 @@ function createSectionPDF(doc, section, rows) {
         didParseCell: function(data) {
             if (data.section === 'head') { 
                 data.cell.styles.fillColor = null; 
-                data.cell.styles.lineWidth = 0; // Prevent borders from drawing in header
+                data.cell.styles.lineWidth = 0;
             }
             if (data.section === 'body') {
                 const rowData = bodyRows[data.row.index];
@@ -848,26 +846,22 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
-            // Smooth Left-to-Right Linear Gradient for Table Headers without overlapping right border
+            // FIXED: Using completely safe hardcoded margin calculation instead of undefined pageStartX
             if (data.section === 'head') {
-                const { x, y, width, height } = data.cell;
-                const tableStartX = data.table.pageStartX;
-                const tableWidth = data.table.width;
+                let tableW = 120; // 210 (page) - 3 (left margin) - 87 (right margin)
+                let relativeX = data.cell.x - 3;
                 
-                for (let i = 0; i < width; i += 0.5) { 
-                    let globalX = x + i;
-                    let ratio = (globalX - tableStartX) / tableWidth;
+                for (let i = 0; i <= data.cell.width; i += 0.5) { 
+                    let ratio = (relativeX + i) / tableW;
                     ratio = Math.max(0, Math.min(1, ratio));
                     
-                    // Smooth, professional Blue gradient transition (Blue 900 to Blue 600)
                     let r = Math.round(30 + (37 - 30) * ratio);
                     let g = Math.round(58 + (99 - 58) * ratio);
                     let b = Math.round(138 + (235 - 138) * ratio);
                     
                     doc.setFillColor(r, g, b);
-                    // Using Math.min ensures the gradient never spills past the cell's actual width
-                    let rectWidth = Math.min(0.6, width - i);
-                    doc.rect(x + i, y, rectWidth, height, 'F');
+                    let rectWidth = Math.min(0.6, data.cell.width - i);
+                    doc.rect(data.cell.x + i, data.cell.y, rectWidth, data.cell.height, 'F');
                 }
             }
         }
@@ -882,7 +876,6 @@ function createSectionPDF(doc, section, rows) {
         body: summaryRows,
         theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1, valign: 'middle' },
-        // Added lineWidth: 0 to remove table header cell divisions
         headStyles: { textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center', lineWidth: 0 },
         columnStyles: {
             0: { cellWidth: 46 }, 
@@ -892,7 +885,7 @@ function createSectionPDF(doc, section, rows) {
         didParseCell: function(data) {
             if (data.section === 'head') { 
                 data.cell.styles.fillColor = null; 
-                data.cell.styles.lineWidth = 0; // Prevent borders from drawing in header
+                data.cell.styles.lineWidth = 0; 
             }
             if (data.section === 'body') {
                 const bgColor = data.row.index % 2 === 0 ? [255, 255, 255] : [240, 248, 245]; 
@@ -900,26 +893,22 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
-            // Smooth Left-to-Right Linear Gradient for Table Headers without overlapping right border
+            // FIXED: Using completely safe hardcoded margin calculation instead of undefined pageStartX
             if (data.section === 'head') {
-                const { x, y, width, height } = data.cell;
-                const tableStartX = data.table.pageStartX;
-                const tableWidth = data.table.width;
+                let tableW = 81; // 210 (page) - 126 (left margin) - 3 (right margin)
+                let relativeX = data.cell.x - 126;
                 
-                for (let i = 0; i < width; i += 0.5) { 
-                    let globalX = x + i;
-                    let ratio = (globalX - tableStartX) / tableWidth;
+                for (let i = 0; i <= data.cell.width; i += 0.5) { 
+                    let ratio = (relativeX + i) / tableW;
                     ratio = Math.max(0, Math.min(1, ratio));
                     
-                    // Smooth, professional Blue gradient transition (Blue 900 to Blue 600)
                     let r = Math.round(30 + (37 - 30) * ratio);
                     let g = Math.round(58 + (99 - 58) * ratio);
                     let b = Math.round(138 + (235 - 138) * ratio);
                     
                     doc.setFillColor(r, g, b);
-                    // Using Math.min ensures the gradient never spills past the cell's actual width
-                    let rectWidth = Math.min(0.6, width - i);
-                    doc.rect(x + i, y, rectWidth, height, 'F');
+                    let rectWidth = Math.min(0.6, data.cell.width - i);
+                    doc.rect(data.cell.x + i, data.cell.y, rectWidth, data.cell.height, 'F');
                 }
             }
         }
@@ -931,7 +920,6 @@ function createSectionPDF(doc, section, rows) {
     for (let i = startPage; i <= endPage; i++) {
         doc.setPage(i);
         
-        // Professional Left-to-Right Header Gradient (Slate 900 to Blue 900)
         const headerHeight = 30;
         for (let x = 0; x <= 210; x += 0.5) {
             let ratio = x / 210;
@@ -942,7 +930,6 @@ function createSectionPDF(doc, section, rows) {
             doc.rect(x, 0, 0.6, headerHeight, 'F'); 
         }
 
-        // Professional Left-to-Right Footer Gradient (Matching Header)
         const footerHeight = 12;
         const footerY = pageHeight - footerHeight;
         for (let x = 0; x <= 210; x += 0.5) {
@@ -1108,19 +1095,19 @@ async function createTimeEarnPDFBlob() {
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    // Margins reduced, Y coordinate pushed up
-    doc.text('Annexure II', 200, 8, { align: 'right' }); 
+    // FIXED OVERLAP: Safely spaced the Y coordinates for Annexure, Hindi, and English text
+    doc.text('Annexure II', 200, 7, { align: 'right' }); 
     
     const titleText = `${hinMonthStr} महीने ${hinYearStr} के लिए महत्वपूर्ण भागों का प्रदर्शन`;
-    addHindiText(doc, titleText, 12, 14, true, 'center'); 
+    addHindiText(doc, titleText, 11, 14, true, 'center'); 
     
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Performance of important sections for the month of ${engMonthStr}-${yearStr}`, 105, 18, { align: 'center' });
+    doc.text(`Performance of important sections for the month of ${engMonthStr}-${yearStr}`, 105, 20, { align: 'center' });
 
     doc.autoTable({
-        startY: 22, // Pulled up from 34
-        margin: { top: 22, bottom: 10, left: 10, right: 10 }, // Compressed margins
+        startY: 25, // Adjusted start to respect the newly spaced text
+        margin: { top: 25, bottom: 10, left: 10, right: 10 },
         head: [
             [
                 { content: 'Description of Materials', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
@@ -1148,9 +1135,9 @@ async function createTimeEarnPDFBlob() {
         }
     });
 
-    let finalY = doc.lastAutoTable.finalY + 8; // Compressed from 15
+    // FIXED GAP: Adding a consistent offset (+12) effectively pushing down the final signature texts by ~3 lines.
+    let finalY = doc.lastAutoTable.finalY + 12; 
     const pageHeight = doc.internal.pageSize.height;
-    // Lowered threshold to maximize data fitting on one page
     if (finalY > pageHeight - 15) { doc.addPage(); finalY = 15; }
 
     const footerHindi = 'वरिष्ठ अनुभाग अभियंता / प्रभारी / बी एस एस / न्यू बंगाईगांव';
@@ -1158,7 +1145,7 @@ async function createTimeEarnPDFBlob() {
 
     doc.setFontSize(10);
     doc.setFont('helvetica', 'bold');
-    doc.text('SSE/IC/BSS/NBQS', 200, finalY + 8, { align: 'right' });
+    doc.text('SSE/IC/BSS/NBQS', 200, finalY + 6, { align: 'right' });
 
     return doc.output('blob');
 }
