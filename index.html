@@ -1,0 +1,1145 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+<meta charset="UTF-8">
+
+<meta name="viewport"
+content="width=device-width, initial-scale=1.0">
+
+<title>
+SMS Work Report Generator
+</title>
+
+<link rel="manifest" href="manifest.json">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Work Report">
+<link rel="apple-touch-icon" href="logo.png">
+
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
+
+<meta name="theme-color" content="#2563eb">
+
+<style>
+
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+}
+
+body{
+    font-family:Arial,sans-serif;
+    background: radial-gradient(circle at top, #1e3a8a 0%, #0f172a 40%, #020617 100%);
+    min-height:100vh;
+    padding:10px;
+    color:white;
+}
+
+.container{
+    width:100%;
+    max-width:1500px;
+    margin:auto;
+    background: linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.04));
+    border-radius:30px;
+    padding:18px;
+    border: 1px solid rgba(255,255,255,0.10);
+    backdrop-filter:blur(20px);
+    box-shadow: 0 15px 50px rgba(0,0,0,0.45);
+}
+
+.logo{
+    width:82px;
+    height:82px;
+    object-fit:contain;
+    display:block;
+    margin:auto;
+}
+
+.title{
+    text-align:center;
+    font-size:30px;
+    font-weight:800;
+    margin-top:10px;
+}
+
+.subtitle{
+    text-align:center;
+    color:#cbd5e1;
+    margin-top:6px;
+    margin-bottom:18px;
+    font-size:14px;
+}
+
+.main-layout{
+    display:flex;
+    flex-direction:column;
+    gap:18px;
+}
+
+.left-panel{
+    width:100%;
+}
+
+.right-panel{
+    width:100%;
+}
+
+.filter-box{
+    background: rgba(255,255,255,0.06);
+    border-radius:24px;
+    padding:18px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+.input-group{
+    margin-bottom:12px;
+}
+
+.input-label{
+    display:block;
+    margin-bottom:7px;
+    font-size:13px;
+    font-weight:700;
+}
+
+.date-input{
+    width:100%;
+    padding:13px;
+    border:none;
+    border-radius:15px;
+    background:white;
+    font-size:14px;
+    font-weight:700;
+    cursor:pointer;
+}
+
+.action-buttons{
+    display:flex;
+    gap:10px;
+    margin-top:8px;
+}
+
+.default-btn{
+    flex: 0 0 35%;
+    border:none;
+    border-radius:16px;
+    padding:15px 5px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color:white;
+    font-size:14px;
+    font-weight:800;
+    cursor:pointer;
+    box-shadow: 0 5px 15px rgba(99,102,241,0.3);
+}
+
+.generate-btn{
+    flex: 1;
+    border:none;
+    border-radius:16px;
+    padding:15px;
+    background: linear-gradient(135deg, #2563eb, #06b6d4);
+    color:white;
+    font-size:16px;
+    font-weight:800;
+    cursor:pointer;
+    box-shadow: 0 5px 15px rgba(37,99,235,0.3);
+}
+
+.loading{
+    display:none;
+    text-align:center;
+    margin-top:15px;
+    font-size:15px;
+    font-weight:700;
+}
+
+.results{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:14px;
+}
+
+.section-card{
+    background: linear-gradient(135deg, rgba(255,255,255,0.10), rgba(255,255,255,0.05));
+    border-radius:22px;
+    padding:14px;
+    border: 1px solid rgba(255,255,255,0.10);
+    transition:0.3s ease;
+}
+
+.section-card:hover{
+    transform:translateY(-4px);
+}
+
+/* --- NEW COLLAPSIBLE UI STYLES --- */
+.card-header-toggle {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    padding: 2px 0;
+}
+
+.header-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.header-right {
+    display: flex;
+    align-items: center;
+}
+
+.toggle-arrow {
+    color: #cbd5e1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.3s ease;
+}
+
+.rotate-arrow {
+    transform: rotate(180deg);
+}
+
+.card-collapsible {
+    display: none; /* Hidden by default */
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+/* ---------------------------------- */
+
+.section-icon{
+    width:44px;
+    height:44px;
+    border-radius:50%;
+    background: linear-gradient(135deg, #2563eb, #38bdf8);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    font-size:18px;
+    flex-shrink: 0;
+}
+
+.section-name{
+    font-size:18px;
+    font-weight:800;
+}
+
+.summary-grid{
+    display:grid;
+    grid-template-columns:1fr 1fr 1fr;
+    gap:8px;
+    margin-bottom:12px;
+}
+
+.summary-box{
+    background: rgba(255,255,255,0.08);
+    border-radius:14px;
+    padding:10px;
+    text-align:center;
+}
+
+.summary-number{
+    font-size:18px;
+    font-weight:900;
+    color:#38bdf8;
+}
+
+.summary-label{
+    font-size:10px;
+    color:#cbd5e1;
+    margin-top:2px;
+}
+
+.button-row{
+    display:flex;
+    gap:8px;
+}
+
+.download-btn,
+.share-btn{
+    flex:1;
+    border:none;
+    border-radius:12px;
+    padding:11px;
+    color:white;
+    font-size:13px;
+    font-weight:800;
+    cursor:pointer;
+}
+
+.download-btn{
+    background: linear-gradient(135deg, #16a34a, #22c55e);
+}
+
+.share-btn{
+    background: linear-gradient(135deg, #2563eb, #38bdf8);
+}
+
+.all-card{
+    background: linear-gradient(135deg, #7c3aed, #2563eb);
+}
+
+.footer{
+    text-align:center;
+    margin-top:22px;
+    color:#cbd5e1;
+    font-size:12px;
+    line-height:1.6;
+}
+
+#toast{
+    position:fixed;
+    top:20px;
+    left:50%;
+    transform:translateX(-50%);
+    background: linear-gradient(135deg, #111827, #1f2937);
+    padding:14px 20px;
+    border-radius:16px;
+    color:white;
+    font-weight:700;
+    z-index:9999;
+    display:none;
+    min-width:260px;
+    text-align:center;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+.install-fab {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+    border: none;
+    border-radius: 50px;
+    padding: 14px 24px;
+    font-size: 15px;
+    font-weight: 800;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.4);
+    cursor: pointer;
+    z-index: 1000;
+    display: none;
+    align-items: center;
+    gap: 8px;
+    transition: 0.3s ease;
+}
+
+.install-fab:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0,0,0,0.5);
+}
+
+@media(min-width:992px){
+    .main-layout{
+        display:grid;
+        grid-template-columns:370px 1fr;
+        gap:22px;
+        align-items:start;
+    }
+    .left-panel{
+        position:sticky;
+        top:18px;
+    }
+    .results{
+        grid-template-columns:1fr 1fr;
+    }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+<img src="logo.png" class="logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCI+PGNpcmNsZSBjeD0iNDUiIGN5PSI0NSIgcj0iNDUiIGZpbGw9IiM0NzU1NjkiLz48L3N2Zz4='">
+
+<div class="title">
+SMS Work Report Generator
+</div>
+
+<div class="subtitle">
+Generate Section Wise Work Reports
+</div>
+
+<div class="main-layout">
+
+<div class="left-panel">
+
+<div class="filter-box">
+
+<div class="input-group">
+<label class="input-label">From Date</label>
+<input type="date" id="fromDate" class="date-input" onclick="this.showPicker()">
+</div>
+
+<div class="input-group">
+<label class="input-label">To Date</label>
+<input type="date" id="toDate" class="date-input" onclick="this.showPicker()">
+</div>
+
+<div class="action-buttons">
+    <button class="default-btn" onclick="setDefaultDates()">
+    📅 Default
+    </button>
+    <button class="generate-btn" onclick="generateReports()">
+    📄 Generate
+    </button>
+</div>
+
+</div>
+
+<div class="loading" id="loading">
+Fetching Google Sheet Data...
+</div>
+
+</div>
+
+<div class="right-panel">
+<div class="results" id="results"></div>
+</div>
+
+</div>
+
+<div class="footer">
+SSE/BSS/NBQS Work Report System<br>
+App Created By Gobind Sharma
+</div>
+
+</div>
+
+<div id="toast"></div>
+
+<button id="installAppBtn" class="install-fab">
+    📲 Install App
+</button>
+
+<script>
+
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OP1z06rCpFMTRiAwncFIWuHK_rB2y0acy3KDVDnZGvA/export?format=csv&gid=0';
+const TIME_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OP1z06rCpFMTRiAwncFIWuHK_rB2y0acy3KDVDnZGvA/export?format=csv&gid=313461371';
+
+let sectionData = {};
+let globalTimeData = [];
+
+function showToast(message){
+    const toast = document.getElementById('toast');
+    toast.innerHTML = message;
+    toast.style.display='block';
+    clearTimeout(window.toastTimer);
+    window.toastTimer = setTimeout(()=>{
+        toast.style.display='none';
+    },3000);
+}
+
+function formatDisplayDate(dateString){
+    const date = new Date(dateString);
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    return String(date.getDate()).padStart(2,'0') + '-' + months[date.getMonth()] + '-' + date.getFullYear();
+}
+
+function getMonthYearString() {
+    const toDateVal = document.getElementById('toDate').value;
+    if(!toDateVal) return "";
+    const tParts = toDateVal.split('-');
+    const tDate = new Date(tParts[0], tParts[1] - 1, tParts[2]);
+    const engMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return `${engMonths[tDate.getMonth()]} ${tDate.getFullYear()}`;
+}
+
+function toHindiDigits(num) {
+    const hindiDigits = ['०','१','२','३','४','५','६','७','८','९'];
+    return String(num).split('').map(d => hindiDigits[d] || d).join('');
+}
+
+function addHindiText(doc, text, y, ptSize, isBold, align='left', rightMargin=200) {
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const scale = 4;
+    const pxSize = ptSize * (96/72) * scale;
+    ctx.font = `${isBold ? 'bold' : 'normal'} ${pxSize}px Arial, sans-serif`;
+    
+    const metrics = ctx.measureText(text);
+    canvas.width = metrics.width + 20;
+    canvas.height = pxSize * 2;
+    
+    ctx.font = `${isBold ? 'bold' : 'normal'} ${pxSize}px Arial, sans-serif`;
+    ctx.fillStyle = '#000000';
+    ctx.textBaseline = 'top';
+    ctx.fillText(text, 10, 10);
+    
+    const imgData = canvas.toDataURL('image/png');
+    const widthMm = (canvas.width / scale) * (25.4 / 96);
+    const heightMm = (canvas.height / scale) * (25.4 / 96);
+    
+    let xPos = 10;
+    if(align === 'center') xPos = 105 - (widthMm / 2);
+    else if(align === 'right') xPos = rightMargin - widthMm;
+    
+    doc.addImage(imgData, 'PNG', xPos, y - (heightMm * 0.1), widthMm, heightMm);
+}
+
+function setDefaultDates() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth(); 
+    
+    const fromDateObj = new Date(year, month - 1, 21);
+    const toDateObj = new Date(year, month, 20);
+
+    const formatForInput = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    };
+
+    document.getElementById('fromDate').value = formatForInput(fromDateObj);
+    document.getElementById('toDate').value = formatForInput(toDateObj);
+}
+
+async function fetchCSVData(url) {
+    const response = await fetch(url);
+    const csv = await response.text();
+    const lines = csv.split('\n');
+    const data = [];
+    
+    for(let i = 1; i < lines.length; i++){
+        const row = lines[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/); 
+        if(row.length > 1){
+            data.push(row.map(cell => cell ? cell.replace(/^"|"$/g, '').trim() : ''));
+        }
+    }
+    return data;
+}
+
+async function generateReports(){
+    const fromDateVal = document.getElementById('fromDate').value;
+    const toDateVal = document.getElementById('toDate').value;
+
+    if(!fromDateVal || !toDateVal){
+        showToast('Please Select Date Range');
+        return;
+    }
+
+    const fParts = fromDateVal.split('-');
+    const from = new Date(fParts[0], fParts[1] - 1, fParts[2]);
+
+    const tParts = toDateVal.split('-');
+    const to = new Date(tParts[0], tParts[1] - 1, tParts[2]);
+    to.setHours(23, 59, 59, 999);
+
+    if(from > to){
+        showToast('From Date Must Be Smaller');
+        return;
+    }
+
+    document.getElementById('loading').style.display='block';
+    document.getElementById('results').innerHTML='';
+
+    const [rawMainData, rawTimeData] = await Promise.all([
+        fetchCSVData(SHEET_URL),
+        fetchCSVData(TIME_SHEET_URL)
+    ]);
+
+    globalTimeData = [];
+    rawTimeData.forEach(row => {
+        if(row.length >= 6) {
+            globalTimeData.push({
+                item: row[0],
+                timeAllotted: row[5]
+            });
+        }
+    });
+
+    sectionData = {};
+
+    rawMainData.forEach(row => {
+        if(row.length >= 5 && row[0]) {
+            const dateStr = row[0];
+            const p = dateStr.split('/');
+            const rowDate = new Date(p[2], p[1]-1, p[0]);
+
+            if(rowDate >= from && rowDate <= to){
+                const section = row[1];
+                if(!sectionData[section]) sectionData[section] = [];
+                
+                sectionData[section].push({
+                    date: dateStr,
+                    item: row[2],
+                    quantity: Number(row[3]),
+                    thickness: row[4]
+                });
+            }
+        }
+    });
+
+    renderCards();
+    document.getElementById('loading').style.display='none';
+    showToast('Reports Generated Successfully');
+}
+
+// --- NEW FUNCTION: Toggle Cards UI ---
+function toggleCard(bodyId, arrowId) {
+    const body = document.getElementById(bodyId);
+    const arrow = document.getElementById(arrowId);
+    
+    if (body.style.display === 'none' || body.style.display === '') {
+        body.style.display = 'block';
+        arrow.classList.add('rotate-arrow');
+    } else {
+        body.style.display = 'none';
+        arrow.classList.remove('rotate-arrow');
+    }
+}
+
+function renderCards(){
+    const container = document.getElementById('results');
+    container.innerHTML='';
+
+    // ALL SECTIONS CARD (Collapsible)
+    const allCard = document.createElement('div');
+    allCard.className = 'section-card all-card';
+
+    allCard.innerHTML = `
+    <div class="card-header-toggle" onclick="toggleCard('body-all', 'arrow-all')">
+        <div class="header-left">
+            <div class="section-icon">📚</div>
+            <div class="section-name">ALL SECTIONS</div>
+        </div>
+        <div class="header-right">
+            <div class="toggle-arrow" id="arrow-all">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+            </div>
+        </div>
+    </div>
+    <div class="card-collapsible" id="body-all">
+        <div class="button-row">
+            <button class="download-btn" onclick="downloadAllPDF()">⬇ Download</button>
+            <button class="share-btn" onclick="shareAllPDF()">🔗 Share</button>
+        </div>
+        <div class="button-row" style="margin-top: 10px;">
+            <button class="download-btn" onclick="downloadTimeEarnPDF()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
+                ⏱ Time Earn
+            </button>
+            <button class="share-btn" onclick="shareTimeEarnPDF()" style="background: linear-gradient(135deg, #ea580c, #b45309);">
+                🔗 Share
+            </button>
+        </div>
+    </div>
+    `;
+    container.appendChild(allCard);
+
+    // DYNAMIC SECTION CARDS (Collapsible)
+    Object.keys(sectionData).forEach((section, index)=>{
+        const rows = sectionData[section];
+        let totalQty = 0;
+        rows.forEach(r => totalQty += Number(r.quantity));
+        const uniqueItems = [...new Set(rows.map(r=>r.item))];
+        
+        const safeId = `sec-${index}`;
+
+        const card = document.createElement('div');
+        card.className = 'section-card';
+        card.innerHTML = `
+        <div class="card-header-toggle" onclick="toggleCard('body-${safeId}', 'arrow-${safeId}')">
+            <div class="header-left">
+                <div class="section-icon">📋</div>
+                <div class="section-name">${section}</div>
+            </div>
+            <div class="header-right">
+                <div class="toggle-arrow" id="arrow-${safeId}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card-collapsible" id="body-${safeId}">
+            <div class="summary-grid">
+                <div class="summary-box">
+                    <div class="summary-number">${rows.length}</div>
+                    <div class="summary-label">Entries</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-number">${totalQty}</div>
+                    <div class="summary-label">Qty</div>
+                </div>
+                <div class="summary-box">
+                    <div class="summary-number">${uniqueItems.length}</div>
+                    <div class="summary-label">Items</div>
+                </div>
+            </div>
+            <div class="button-row">
+                <button class="download-btn" onclick="downloadPDF('${section}')">⬇ Download</button>
+                <button class="share-btn" onclick="sharePDF('${section}')">🔗 Share</button>
+            </div>
+        </div>
+        `;
+        container.appendChild(card);
+    });
+}
+
+// ----------------------------------------------------
+// PDF GENERATION: Original Standard Reports
+// ----------------------------------------------------
+
+function createSectionPDF(doc, section, rows) {
+    const fromDateVal = document.getElementById('fromDate').value;
+    const fParts = fromDateVal.split('-');
+    const fromDate = formatDisplayDate(`${fParts[0]}-${fParts[1]}-${fParts[2]}T00:00:00`);
+
+    const toDateVal = document.getElementById('toDate').value;
+    const tParts = toDateVal.split('-');
+    const toDate = formatDisplayDate(`${tParts[0]}-${tParts[1]}-${tParts[2]}T00:00:00`);
+    
+    const startPage = doc.internal.getCurrentPageInfo().pageNumber;
+
+    rows.sort((a,b)=>{
+        const pa = a.date.split('/');
+        const pb = b.date.split('/');
+        return new Date(pa[2],pa[1]-1,pa[0]) - new Date(pb[2],pb[1]-1,pb[0]);
+    });
+
+    const summary = {};
+    rows.forEach(r => {
+        const key = r.item + '|' + r.thickness;
+        if(!summary[key]){ summary[key]=0; }
+        summary[key] += Number(r.quantity);
+    });
+    
+    const summaryRows = Object.keys(summary).map(key => {
+        const p = key.split('|');
+        return [p[0], p[1], summary[key]];
+    });
+
+    const dateCounts = {};
+    rows.forEach(r => {
+        dateCounts[r.date] = (dateCounts[r.date] || 0) + 1;
+    });
+
+    const bodyRows = [];
+    let currentGroup = -1;
+    let previousDate = '';
+
+    rows.forEach(r => {
+        let displayDate = formatDisplayDate(r.date.split('/').reverse().join('-') + 'T00:00:00');
+
+        if (r.date !== previousDate) {
+            currentGroup++;
+            bodyRows.push({
+                row: [
+                    { content: displayDate, rowSpan: dateCounts[r.date], styles: { valign: 'middle', halign: 'center', fontStyle: 'bold' } },
+                    r.item,
+                    r.thickness,
+                    r.quantity
+                ],
+                group: currentGroup
+            });
+            previousDate = r.date;
+        } else {
+            bodyRows.push({
+                row: [
+                    r.item,
+                    r.thickness,
+                    r.quantity
+                ],
+                group: currentGroup
+            });
+        }
+    });
+
+    doc.setTextColor(25, 35, 55);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Detail Work Report', 3, 38);
+    doc.text('Item Summary', 126, 38);
+
+    doc.autoTable({
+        startY: 40,
+        margin: { top: 40, bottom: 12, left: 3, right: 87 }, 
+        head: [['Date', 'Description', 'Thick.', 'Qty']],
+        body: bodyRows.map(r => r.row),
+        theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1, valign: 'middle' },
+        headStyles: { textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+        columnStyles: {
+            0: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
+            1: { cellWidth: 65 }, 
+            2: { cellWidth: 18, halign: 'center' },
+            3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
+        },
+        didParseCell: function(data) {
+            if (data.section === 'head') { data.cell.styles.fillColor = null; }
+            if (data.section === 'body') {
+                const rowData = bodyRows[data.row.index];
+                const bgColor = rowData.group % 2 === 0 ? [255, 255, 255] : [235, 243, 255]; 
+                data.cell.styles.fillColor = bgColor;
+            }
+        },
+        willDrawCell: function(data) {
+            if (data.section === 'head') {
+                const { x, y, width, height } = data.cell;
+                for (let i = 0; i <= height; i += 0.5) {
+                    let ratio = i / height;
+                    let r = Math.round(15 + (30 - 15) * ratio); 
+                    let g = Math.round(23 + (58 - 23) * ratio); 
+                    let b = Math.round(42 + (138 - 42) * ratio); 
+                    doc.setFillColor(r, g, b);
+                    doc.rect(x, y + i, width, 0.6, 'F');
+                }
+            }
+        }
+    });
+
+    doc.setPage(startPage); 
+
+    doc.autoTable({
+        startY: 40,
+        margin: { top: 40, bottom: 12, left: 126, right: 3 },
+        head: [['Item Description', 'Thick.', 'Total Qty']],
+        body: summaryRows,
+        theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1, valign: 'middle' },
+        headStyles: { textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+        columnStyles: {
+            0: { cellWidth: 46 }, 
+            1: { cellWidth: 18, halign: 'center' },
+            2: { cellWidth: 17, halign: 'center', fontStyle: 'bold' }
+        },
+        didParseCell: function(data) {
+            if (data.section === 'head') { data.cell.styles.fillColor = null; }
+            if (data.section === 'body') {
+                const bgColor = data.row.index % 2 === 0 ? [255, 255, 255] : [240, 248, 245]; 
+                data.cell.styles.fillColor = bgColor;
+            }
+        },
+        willDrawCell: function(data) {
+            if (data.section === 'head') {
+                const { x, y, width, height } = data.cell;
+                for (let i = 0; i <= height; i += 0.5) {
+                    let ratio = i / height;
+                    let r = Math.round(2 + (4 - 2) * ratio);   
+                    let g = Math.round(44 + (120 - 44) * ratio); 
+                    let b = Math.round(34 + (87 - 34) * ratio);  
+                    doc.setFillColor(r, g, b);
+                    doc.rect(x, y + i, width, 0.6, 'F');
+                }
+            }
+        }
+    });
+
+    const endPage = doc.internal.getNumberOfPages();
+    const pageHeight = doc.internal.pageSize.height;
+    
+    for (let i = startPage; i <= endPage; i++) {
+        doc.setPage(i);
+        
+        const headerHeight = 30;
+        for (let y = 0; y <= headerHeight; y += 0.5) {
+            let ratio = y / headerHeight;
+            let r = Math.round(15 + (13 - 15) * ratio);
+            let g = Math.round(23 + (148 - 23) * ratio);
+            let b = Math.round(42 + (136 - 42) * ratio);
+            doc.setFillColor(r, g, b);
+            doc.rect(0, y, 210, 0.6, 'F'); 
+        }
+
+        try {
+            const img = document.querySelector('.logo');
+            if(img) doc.addImage(img, 'PNG', 3, 2, 26, 26);
+        } catch(e) {}
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('SMS WORK REPORT', 105, 12, {align:'center'});
+
+        doc.setFontSize(9);
+        doc.setTextColor(220, 230, 240);
+        doc.setFont('helvetica', 'normal');
+        doc.text('App Created By Gobind Sharma', 105, 17, {align:'center'});
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
+        doc.text(infoText, 105, 25, {align:'center'});
+
+        doc.setDrawColor(220, 220, 220);
+        doc.setLineWidth(0.5);
+        doc.line(3, pageHeight - 10, 207, pageHeight - 10);
+        doc.setFontSize(9);
+        doc.setTextColor(120, 120, 120);
+        doc.setFont('helvetica', 'normal');
+        doc.text('SSE/BSS/NBQS Work Report System', 105, pageHeight - 4, { align: 'center' });
+    }
+}
+
+async function createPDF(section){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('portrait');
+    createSectionPDF(doc, section, sectionData[section]);
+    return doc.output('blob');
+}
+
+async function downloadPDF(section){
+    const blob = await createPDF(section);
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `${section} ${getMonthYearString()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+}
+
+async function sharePDF(section){
+    const blob = await createPDF(section);
+    const filename = `${section} ${getMonthYearString()}.pdf`;
+    const file = new File([blob], filename, { type:'application/pdf' });
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({ files:[file] });
+    } else {
+        showToast('Sharing Not Supported');
+    }
+}
+
+async function createAllPDF(){
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('portrait');
+    const sections = Object.keys(sectionData);
+
+    sections.forEach((section,index)=>{
+        if(index !== 0) doc.addPage();
+        createSectionPDF(doc, section, sectionData[section]);
+    });
+    return doc.output('blob');
+}
+
+async function downloadAllPDF(){
+    const blob = await createAllPDF();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `All_Sections_Report ${getMonthYearString()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+}
+
+async function shareAllPDF(){
+    const blob = await createAllPDF();
+    const filename = `All_Sections_Report ${getMonthYearString()}.pdf`;
+    const file = new File([blob], filename, { type:'application/pdf' });
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({ files:[file] });
+    } else {
+        showToast('Sharing Not Supported');
+    }
+}
+
+// ----------------------------------------------------
+// PDF GENERATION: NEW Time Earn Report Logic
+// ----------------------------------------------------
+
+function findTimeAllotted(itemName) {
+    let search = itemName.trim().toLowerCase();
+    
+    // 1. Exact match
+    let found = globalTimeData.find(t => t.item.trim().toLowerCase() === search);
+    if(found && !isNaN(parseFloat(found.timeAllotted))) return parseFloat(found.timeAllotted);
+
+    // 2. First and second word match
+    let words = search.split(/\s+/);
+    if (words.length >= 2) {
+        let prefix = words[0] + ' ' + words[1];
+        found = globalTimeData.find(t => t.item.trim().toLowerCase().startsWith(prefix));
+        if(found && !isNaN(parseFloat(found.timeAllotted))) return parseFloat(found.timeAllotted);
+    }
+
+    // 3. First word fallback
+    if (words.length >= 1) {
+        let prefix = words[0];
+        found = globalTimeData.find(t => t.item.trim().toLowerCase().startsWith(prefix));
+        if(found && !isNaN(parseFloat(found.timeAllotted))) return parseFloat(found.timeAllotted);
+    }
+
+    return 0; // Default
+}
+
+async function createTimeEarnPDFBlob() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('portrait');
+
+    let itemAggregates = {};
+    Object.keys(sectionData).forEach(sec => {
+        sectionData[sec].forEach(row => {
+            let item = row.item.trim();
+            if(!itemAggregates[item]) itemAggregates[item] = 0;
+            itemAggregates[item] += Number(row.quantity);
+        });
+    });
+
+    let aggregatedArray = Object.keys(itemAggregates).map(item => ({
+        item: item,
+        qty: itemAggregates[item]
+    }));
+    aggregatedArray.sort((a,b) => a.item.localeCompare(b.item));
+
+    let bodyRows = [];
+    aggregatedArray.forEach(data => {
+        let timePerUnit = findTimeAllotted(data.item);
+        let totalTime = (data.qty * timePerUnit).toFixed(3);
+        bodyRows.push([ data.item, "", "", "", data.qty.toString(), totalTime ]);
+    });
+
+    const toDateVal = document.getElementById('toDate').value;
+    const tParts = toDateVal.split('-');
+    const tDate = new Date(tParts[0], tParts[1] - 1, tParts[2]);
+
+    const engMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    const hinMonths = ['जनवरी','फरवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर'];
+
+    const mIndex = tDate.getMonth();
+    const yearStr = String(tDate.getFullYear());
+    const engMonthStr = engMonths[mIndex];
+    const hinMonthStr = hinMonths[mIndex];
+    const hinYearStr = toHindiDigits(yearStr);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(10);
+    doc.text('Annexure II', 200, 15, { align: 'right' });
+    
+    const titleText = `${hinMonthStr} महीने ${hinYearStr} के लिए महत्वपूर्ण भागों का प्रदर्शन`;
+    addHindiText(doc, titleText, 22, 14, true, 'center');
+    
+    doc.setFontSize(11);
+    doc.setFont('helvetica', 'normal');
+    doc.text(`Performance of important sections for the month of ${engMonthStr}-${yearStr}`, 105, 30, { align: 'center' });
+
+    doc.autoTable({
+        startY: 34,
+        margin: { top: 34, bottom: 15, left: 10, right: 10 },
+        head: [
+            [
+                { content: 'Description of Materials', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Received\nduring the\nmonth', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Assistance given to (in Nos)', colSpan: 3, styles: { halign: 'center', valign: 'middle' } },
+                { content: 'Allowed man\nhours consumed\n(in m/hrs)', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }
+            ],
+            [
+                { content: 'Division', styles: { halign: 'center' } },
+                { content: 'Store', styles: { halign: 'center' } },
+                { content: 'Shop & shop', styles: { halign: 'center' } }
+            ]
+        ],
+        body: bodyRows,
+        theme: 'grid',
+        styles: { fontSize: 8.5, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1, cellPadding: 1.5, valign: 'middle' },
+        headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
+        columnStyles: {
+            0: { cellWidth: 70 },
+            1: { cellWidth: 20, halign: 'center' },
+            2: { cellWidth: 20, halign: 'center' },
+            3: { cellWidth: 20, halign: 'center' },
+            4: { cellWidth: 25, halign: 'center' },
+            5: { cellWidth: 35, halign: 'center' }
+        }
+    });
+
+    let finalY = doc.lastAutoTable.finalY + 15;
+    const pageHeight = doc.internal.pageSize.height;
+    if (finalY > pageHeight - 20) { doc.addPage(); finalY = 20; }
+
+    const footerHindi = 'वरिष्ठ अनुभाग अभियंता / प्रभारी / बी एस एस / न्यू बंगाईगांव';
+    addHindiText(doc, footerHindi, finalY, 10, true, 'right', 200);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SSE/IC/BSS/NBQS', 200, finalY + 8, { align: 'right' });
+
+    return doc.output('blob');
+}
+
+async function downloadTimeEarnPDF() {
+    if (Object.keys(sectionData).length === 0) {
+        showToast('No data available to generate report');
+        return;
+    }
+    const blob = await createTimeEarnPDFBlob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `All_Section_Time_Earn_Report ${getMonthYearString()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+}
+
+async function shareTimeEarnPDF() {
+    if (Object.keys(sectionData).length === 0) {
+        showToast('No data available to share');
+        return;
+    }
+    const blob = await createTimeEarnPDFBlob();
+    const filename = `All_Section_Time_Earn_Report ${getMonthYearString()}.pdf`;
+    const file = new File([blob], filename, { type:'application/pdf' });
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({ files:[file] });
+    } else {
+        showToast('Sharing Not Supported');
+    }
+}
+
+// ----------------------------------------------------
+// PWA Installation Scripts
+// ----------------------------------------------------
+
+let deferredPrompt;
+const installBtn = document.getElementById('installAppBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.style.display = 'flex';
+});
+
+installBtn.addEventListener('click', async () => {
+    installBtn.style.display = 'none';
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+});
+
+window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    showToast('App Installed Successfully!');
+});
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+            console.log('SW registration failed:', err);
+        });
+    });
+}
+
+</script>
+
+</body>
+
+</html>
