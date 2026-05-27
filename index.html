@@ -106,6 +106,7 @@ body{
     font-weight:700;
 }
 
+/* --- CUSTOM DATE PICKER STYLES --- */
 .date-wrapper {
     position: relative;
     display: flex;
@@ -118,15 +119,15 @@ body{
 .date-icon {
     position: absolute;
     left: 14px;
-    color: #6366f1; 
+    color: #6366f1; /* Theme matching purple/blue */
     display: flex;
     align-items: center;
-    pointer-events: none; 
+    pointer-events: none; /* Let clicks pass through to the input */
 }
 
 .date-input {
     width: 100%;
-    padding: 13px 13px 13px 44px; 
+    padding: 13px 13px 13px 44px; /* Added left padding for the icon */
     border: none;
     background: transparent;
     font-size: 14px;
@@ -136,6 +137,7 @@ body{
     outline: none;
 }
 
+/* Hack to make the native calendar picker cover the entire box on Webkit browsers */
 .date-input::-webkit-calendar-picker-indicator {
     background: transparent;
     color: transparent;
@@ -149,6 +151,7 @@ body{
     bottom: 0;
     opacity: 0;
 }
+/* ------------------------------------ */
 
 .action-buttons{
     display:flex;
@@ -441,10 +444,10 @@ Generate Section Wise Work Reports
 
 <div class="action-buttons">
     <button class="default-btn" onclick="setDefaultDates()">
-    📅 Default
+    ЁЯУЕ Default
     </button>
     <button class="generate-btn" onclick="generateReports()">
-    📄 Generate
+    ЁЯУД Generate
     </button>
 </div>
 
@@ -472,7 +475,7 @@ App Created By Gobind Sharma
 <div id="toast"></div>
 
 <button id="installAppBtn" class="install-fab">
-    📲 Install App
+    ЁЯУ▓ Install App
 </button>
 
 <script>
@@ -509,7 +512,7 @@ function getMonthYearString() {
 }
 
 function toHindiDigits(num) {
-    const hindiDigits = ['०','१','२','३','४','५','६','७','८','९'];
+    const hindiDigits = ['реж','рез','реи','рей','рек','рел','рем','рен','рео','реп'];
     return String(num).split('').map(d => hindiDigits[d] || d).join('');
 }
 
@@ -673,7 +676,7 @@ function renderCards(){
     allCard.innerHTML = `
     <div class="card-header-toggle" onclick="toggleCard('body-all', 'arrow-all')">
         <div class="header-left">
-            <div class="section-icon">📚</div>
+            <div class="section-icon">ЁЯУЪ</div>
             <div class="section-name">ALL SECTIONS</div>
         </div>
         <div class="header-right">
@@ -684,15 +687,15 @@ function renderCards(){
     </div>
     <div class="card-collapsible" id="body-all">
         <div class="button-row">
-            <button class="download-btn" onclick="downloadAllPDF()">⬇ Download</button>
-            <button class="share-btn" onclick="shareAllPDF()">🔗 Share</button>
+            <button class="download-btn" onclick="downloadAllPDF()">тмЗ Download</button>
+            <button class="share-btn" onclick="shareAllPDF()">ЁЯФЧ Share</button>
         </div>
         <div class="button-row" style="margin-top: 10px;">
             <button class="download-btn" onclick="downloadTimeEarnPDF()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                ⏱ Time Earn
+                тП▒ Time Earn
             </button>
             <button class="share-btn" onclick="shareTimeEarnPDF()" style="background: linear-gradient(135deg, #ea580c, #b45309);">
-                🔗 Share
+                ЁЯФЧ Share
             </button>
         </div>
     </div>
@@ -712,7 +715,7 @@ function renderCards(){
         card.innerHTML = `
         <div class="card-header-toggle" onclick="toggleCard('body-${safeId}', 'arrow-${safeId}')">
             <div class="header-left">
-                <div class="section-icon">📋</div>
+                <div class="section-icon">ЁЯУЛ</div>
                 <div class="section-name">${section}</div>
             </div>
             <div class="header-right">
@@ -738,8 +741,8 @@ function renderCards(){
                 </div>
             </div>
             <div class="button-row">
-                <button class="download-btn" onclick="downloadPDF('${section}')">⬇ Download</button>
-                <button class="share-btn" onclick="sharePDF('${section}')">🔗 Share</button>
+                <button class="download-btn" onclick="downloadPDF('${section}')">тмЗ Download</button>
+                <button class="share-btn" onclick="sharePDF('${section}')">ЁЯФЧ Share</button>
             </div>
         </div>
         `;
@@ -833,10 +836,7 @@ function createSectionPDF(doc, section, rows) {
             3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
-            if (data.section === 'head') { 
-                data.cell.styles.fillColor = null; 
-                data.cell.styles.lineWidth = 0; 
-            }
+            if (data.section === 'head') { data.cell.styles.fillColor = null; }
             if (data.section === 'body') {
                 const rowData = bodyRows[data.row.index];
                 const bgColor = rowData.group % 2 === 0 ? [255, 255, 255] : [235, 243, 255]; 
@@ -844,19 +844,16 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
+            // UPDATED: Table Header Slate-Blue Gradient
             if (data.section === 'head') {
-                let tableX = 3;
-                let tableW = 120; 
-                let relativeX = data.cell.x - tableX;
-                
-                for (let i = 0; i <= data.cell.width; i += 0.5) { 
-                    let ratio = (relativeX + i) / tableW;
-                    ratio = Math.max(0, Math.min(1, ratio));
-                    let r = Math.round(37 + (6 - 37) * ratio); 
-                    let g = Math.round(99 + (182 - 99) * ratio);
-                    let b = Math.round(235 + (212 - 235) * ratio);
+                const { x, y, width, height } = data.cell;
+                for (let i = 0; i <= width; i += 1) { 
+                    let ratio = i / width;
+                    let r = Math.round(44 + (30 - 44) * ratio); // Slate Blue
+                    let g = Math.round(62 + (41 - 62) * ratio);
+                    let b = Math.round(80 + (59 - 80) * ratio);
                     doc.setFillColor(r, g, b);
-                    doc.rect(data.cell.x + i, data.cell.y, 1, data.cell.height, 'F');
+                    doc.rect(x + i, y, 1.5, height, 'F');
                 }
             }
         }
@@ -878,29 +875,23 @@ function createSectionPDF(doc, section, rows) {
             2: { cellWidth: 17, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
-            if (data.section === 'head') { 
-                data.cell.styles.fillColor = null; 
-                data.cell.styles.lineWidth = 0;
-            }
+            if (data.section === 'head') { data.cell.styles.fillColor = null; }
             if (data.section === 'body') {
                 const bgColor = data.row.index % 2 === 0 ? [255, 255, 255] : [240, 248, 245]; 
                 data.cell.styles.fillColor = bgColor;
             }
         },
         willDrawCell: function(data) {
+            // UPDATED: Table Header Slate-Blue Gradient
             if (data.section === 'head') {
-                let tableX = 126;
-                let tableW = 81;
-                let relativeX = data.cell.x - tableX;
-
-                for (let i = 0; i <= data.cell.width; i += 0.5) { 
-                    let ratio = (relativeX + i) / tableW;
-                    ratio = Math.max(0, Math.min(1, ratio));
-                    let r = Math.round(15 + (20 - 15) * ratio); 
-                    let g = Math.round(118 + (184 - 118) * ratio);
-                    let b = Math.round(110 + (166 - 110) * ratio);
+                const { x, y, width, height } = data.cell;
+                for (let i = 0; i <= width; i += 1) { 
+                    let ratio = i / width;
+                    let r = Math.round(44 + (30 - 44) * ratio); // Slate Blue
+                    let g = Math.round(62 + (41 - 62) * ratio);
+                    let b = Math.round(80 + (59 - 80) * ratio);
                     doc.setFillColor(r, g, b);
-                    doc.rect(data.cell.x + i, data.cell.y, 1, data.cell.height, 'F');
+                    doc.rect(x + i, y, 1.5, height, 'F');
                 }
             }
         }
@@ -912,14 +903,27 @@ function createSectionPDF(doc, section, rows) {
     for (let i = startPage; i <= endPage; i++) {
         doc.setPage(i);
         
+        // UPDATED: Darker Blue Header Gradient
         const headerHeight = 30;
         for (let y = 0; y <= headerHeight; y += 0.5) {
             let ratio = y / headerHeight;
-            let r = Math.round(10 + (30 - 10) * ratio);  
-            let g = Math.round(20 + (60 - 20) * ratio);
-            let b = Math.round(40 + (150 - 40) * ratio);
+            let r = Math.round(10 + (22 - 10) * ratio);  
+            let g = Math.round(20 + (45 - 20) * ratio);
+            let b = Math.round(40 + (110 - 40) * ratio);
             doc.setFillColor(r, g, b);
             doc.rect(0, y, 210, 0.6, 'F'); 
+        }
+
+        // UPDATED: Bottom Footer Gradient (Matching Header)
+        const footerHeight = 12;
+        const footerY = pageHeight - footerHeight;
+        for (let y = 0; y <= footerHeight; y += 0.5) {
+            let ratio = y / footerHeight;
+            let r = Math.round(10 + (22 - 10) * ratio);
+            let g = Math.round(20 + (45 - 20) * ratio);
+            let b = Math.round(40 + (110 - 40) * ratio);
+            doc.setFillColor(r, g, b);
+            doc.rect(0, footerY + y, 210, 0.6, 'F'); 
         }
 
         try {
@@ -943,21 +947,7 @@ function createSectionPDF(doc, section, rows) {
         const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
         doc.text(infoText, 105, 25, {align:'center'});
 
-        const footerHeight = 12;
-        const footerY = pageHeight - footerHeight;
-        for (let y = 0; y <= footerHeight; y += 0.5) {
-            let ratio = y / footerHeight;
-            let r = Math.round(10 + (30 - 10) * ratio);
-            let g = Math.round(20 + (60 - 20) * ratio);
-            let b = Math.round(40 + (150 - 40) * ratio);
-            doc.setFillColor(r, g, b);
-            doc.rect(0, footerY + y, 210, 0.6, 'F'); 
-        }
-
-        doc.setDrawColor(220, 220, 220);
-        doc.setLineWidth(0.5);
-        doc.line(3, footerY - 2, 207, footerY - 2);
-
+        // UPDATED: Footer text with contrasting color
         doc.setFontSize(9);
         doc.setTextColor(230, 240, 250);
         doc.setFont('helvetica', 'normal');
@@ -1081,7 +1071,7 @@ async function createTimeEarnPDFBlob() {
     const tDate = new Date(tParts[0], tParts[1] - 1, tParts[2]);
 
     const engMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const hinMonths = ['जनवरी','फरवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर'];
+    const hinMonths = ['рдЬрдирд╡рд░реА','рдлрд░рд╡рд░реА','рдорд╛рд░реНрдЪ','рдЕрдкреНрд░реИрд▓','рдордИ','рдЬреВрди','рдЬреБрд▓рд╛рдИ','рдЕрдЧрд╕реНрдд','рд╕рд┐рддрдВрдмрд░','рдЕрдХреНрдЯреВрдмрд░','рдирд╡рдВрдмрд░','рджрд┐рд╕рдВрдмрд░'];
 
     const mIndex = tDate.getMonth();
     const yearStr = String(tDate.getFullYear());
@@ -1093,7 +1083,7 @@ async function createTimeEarnPDFBlob() {
     doc.setFontSize(10);
     doc.text('Annexure II', 200, 15, { align: 'right' });
     
-    const titleText = `${hinMonthStr} महीने ${hinYearStr} के लिए महत्वपूर्ण भागों का प्रदर्शन`;
+    const titleText = `${hinMonthStr} рдорд╣реАрдиреЗ ${hinYearStr} рдХреЗ рд▓рд┐рдП рдорд╣рддреНрд╡рдкреВрд░реНрдг рднрд╛рдЧреЛрдВ рдХрд╛ рдкреНрд░рджрд░реНрд╢рди`;
     addHindiText(doc, titleText, 22, 14, true, 'center');
     
     doc.setFontSize(11);
@@ -1134,5 +1124,77 @@ async function createTimeEarnPDFBlob() {
     const pageHeight = doc.internal.pageSize.height;
     if (finalY > pageHeight - 20) { doc.addPage(); finalY = 20; }
 
-    const footerHindi = 'वरिष्ठ अनुभाग अभियंता / प्रभारी / बी एस एस / न्यू बंगाईगांव';
-    add
+    const footerHindi = 'рд╡рд░рд┐рд╖реНрда рдЕрдиреБрднрд╛рдЧ рдЕрднрд┐рдпрдВрддрд╛ / рдкреНрд░рднрд╛рд░реА / рдмреА рдПрд╕ рдПрд╕ / рдиреНрдпреВ рдмрдВрдЧрд╛рдИрдЧрд╛рдВрд╡';
+    addHindiText(doc, footerHindi, finalY, 10, true, 'right', 200);
+
+    doc.setFontSize(10);
+    doc.setFont('helvetica', 'bold');
+    doc.text('SSE/IC/BSS/NBQS', 200, finalY + 8, { align: 'right' });
+
+    return doc.output('blob');
+}
+
+async function downloadTimeEarnPDF() {
+    if (Object.keys(sectionData).length === 0) {
+        showToast('No data available to generate report');
+        return;
+    }
+    const blob = await createTimeEarnPDFBlob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `All_Section_Time_Earn_Report ${getMonthYearString()}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+}
+
+async function shareTimeEarnPDF() {
+    if (Object.keys(sectionData).length === 0) {
+        showToast('No data available to share');
+        return;
+    }
+    const blob = await createTimeEarnPDFBlob();
+    const filename = `All_Section_Time_Earn_Report ${getMonthYearString()}.pdf`;
+    const file = new File([blob], filename, { type:'application/pdf' });
+    if(navigator.canShare && navigator.canShare({files:[file]})){
+        await navigator.share({ files:[file] });
+    } else {
+        showToast('Sharing Not Supported');
+    }
+}
+
+let deferredPrompt;
+const installBtn = document.getElementById('installAppBtn');
+
+window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    installBtn.style.display = 'flex';
+});
+
+installBtn.addEventListener('click', async () => {
+    installBtn.style.display = 'none';
+    deferredPrompt.prompt();
+    const { outcome } = await deferredPrompt.userChoice;
+    deferredPrompt = null;
+});
+
+window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    showToast('App Installed Successfully!');
+});
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js').catch(err => {
+            console.log('SW registration failed:', err);
+        });
+    });
+}
+
+</script>
+
+</body>
+
+</html>
