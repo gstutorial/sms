@@ -121,8 +121,27 @@ body{
     cursor:pointer;
 }
 
+.action-buttons{
+    display:flex;
+    gap:10px;
+    margin-top:8px;
+}
+
+.default-btn{
+    flex: 0 0 35%;
+    border:none;
+    border-radius:16px;
+    padding:15px 5px;
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+    color:white;
+    font-size:14px;
+    font-weight:800;
+    cursor:pointer;
+    box-shadow: 0 5px 15px rgba(99,102,241,0.3);
+}
+
 .generate-btn{
-    width:100%;
+    flex: 1;
     border:none;
     border-radius:16px;
     padding:15px;
@@ -131,7 +150,7 @@ body{
     font-size:16px;
     font-weight:800;
     cursor:pointer;
-    margin-top:8px;
+    box-shadow: 0 5px 15px rgba(37,99,235,0.3);
 }
 
 .loading{
@@ -339,9 +358,14 @@ Generate Section Wise Work Reports
 <input type="date" id="toDate" class="date-input" onclick="this.showPicker()">
 </div>
 
-<button class="generate-btn" onclick="generateReports()">
-📄 Generate Reports
-</button>
+<div class="action-buttons">
+    <button class="default-btn" onclick="setDefaultDates()">
+    📅 Default
+    </button>
+    <button class="generate-btn" onclick="generateReports()">
+    📄 Generate
+    </button>
+</div>
 
 </div>
 
@@ -434,6 +458,27 @@ function addHindiText(doc, text, y, ptSize, isBold, align='left', rightMargin=20
     else if(align === 'right') xPos = rightMargin - widthMm;
     
     doc.addImage(imgData, 'PNG', xPos, y - (heightMm * 0.1), widthMm, heightMm);
+}
+
+// --- NEW FUNCTION: Set Default Dates (Last month 21st to Current month 20th) ---
+function setDefaultDates() {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = today.getMonth(); // 0-indexed (Jan = 0, Feb = 1)
+    
+    // JS Date object elegantly handles negative months by rolling back the year
+    const fromDateObj = new Date(year, month - 1, 21);
+    const toDateObj = new Date(year, month, 20);
+
+    const formatForInput = (d) => {
+        const y = d.getFullYear();
+        const m = String(d.getMonth() + 1).padStart(2, '0');
+        const day = String(d.getDate()).padStart(2, '0');
+        return `${y}-${m}-${day}`;
+    };
+
+    document.getElementById('fromDate').value = formatForInput(fromDateObj);
+    document.getElementById('toDate').value = formatForInput(toDateObj);
 }
 
 async function fetchCSVData(url) {
@@ -652,7 +697,6 @@ function createSectionPDF(doc, section, rows) {
     doc.setTextColor(25, 35, 55);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    // Margins and positioning brought up slightly
     doc.text('Detail Work Report', 3, 38);
     doc.text('Item Summary', 126, 38);
 
@@ -736,7 +780,7 @@ function createSectionPDF(doc, section, rows) {
     for (let i = startPage; i <= endPage; i++) {
         doc.setPage(i);
         
-        const headerHeight = 36;
+        const headerHeight = 30;
         for (let y = 0; y <= headerHeight; y += 0.5) {
             let ratio = y / headerHeight;
             let r = Math.round(15 + (13 - 15) * ratio);
@@ -748,24 +792,24 @@ function createSectionPDF(doc, section, rows) {
 
         try {
             const img = document.querySelector('.logo');
-            if(img) doc.addImage(img, 'PNG', 3, 4, 28, 28);
+            if(img) doc.addImage(img, 'PNG', 3, 2, 26, 26);
         } catch(e) {}
 
         doc.setTextColor(255, 255, 255);
-        doc.setFontSize(22);
+        doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
-        doc.text('SMS WORK REPORT', 105, 14, {align:'center'});
+        doc.text('SMS WORK REPORT', 105, 12, {align:'center'});
 
         doc.setFontSize(9);
         doc.setTextColor(220, 230, 240);
         doc.setFont('helvetica', 'normal');
-        doc.text('App Created By Gobind Sharma', 105, 20, {align:'center'});
+        doc.text('App Created By Gobind Sharma', 105, 17, {align:'center'});
 
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
         doc.setTextColor(255, 255, 255);
         const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
-        doc.text(infoText, 105, 30, {align:'center'});
+        doc.text(infoText, 105, 25, {align:'center'});
 
         doc.setDrawColor(220, 220, 220);
         doc.setLineWidth(0.5);
@@ -784,7 +828,6 @@ async function createPDF(section){
     return doc.output('blob');
 }
 
-// Download Button fix (appends link to body before clicking)
 async function downloadPDF(section){
     const blob = await createPDF(section);
     const a = document.createElement('a');
