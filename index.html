@@ -18,6 +18,10 @@ SMS Work Report Generator
 <meta name="apple-mobile-web-app-title" content="Work Report">
 <link rel="apple-touch-icon" href="logo.png">
 
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.5.31/jspdf.plugin.autotable.min.js"></script>
 
@@ -390,6 +394,15 @@ function formatDisplayDate(dateString){
     return String(date.getDate()).padStart(2,'0') + '-' + months[date.getMonth()] + '-' + date.getFullYear();
 }
 
+function getMonthYearString() {
+    const toDateVal = document.getElementById('toDate').value;
+    if(!toDateVal) return "";
+    const tParts = toDateVal.split('-');
+    const tDate = new Date(tParts[0], tParts[1] - 1, tParts[2]);
+    const engMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+    return `${engMonths[tDate.getMonth()]} ${tDate.getFullYear()}`;
+}
+
 function toHindiDigits(num) {
     const hindiDigits = ['०','१','२','३','४','५','६','७','८','९'];
     return String(num).split('').map(d => hindiDigits[d] || d).join('');
@@ -399,7 +412,7 @@ function toHindiDigits(num) {
 function addHindiText(doc, text, y, ptSize, isBold, align='left', rightMargin=200) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
-    const scale = 4; // High DPI scaling for clear PDF rendering
+    const scale = 4; // High DPI scaling
     const pxSize = ptSize * (96/72) * scale;
     ctx.font = `${isBold ? 'bold' : 'normal'} ${pxSize}px Arial, sans-serif`;
     
@@ -407,7 +420,6 @@ function addHindiText(doc, text, y, ptSize, isBold, align='left', rightMargin=20
     canvas.width = metrics.width + 20;
     canvas.height = pxSize * 2;
     
-    // Re-apply font after resizing canvas
     ctx.font = `${isBold ? 'bold' : 'normal'} ${pxSize}px Arial, sans-serif`;
     ctx.fillStyle = '#000000';
     ctx.textBaseline = 'top';
@@ -424,7 +436,6 @@ function addHindiText(doc, text, y, ptSize, isBold, align='left', rightMargin=20
     doc.addImage(imgData, 'PNG', xPos, y - (heightMm * 0.1), widthMm, heightMm);
 }
 
-// Robust CSV Fetcher handling quoted commas
 async function fetchCSVData(url) {
     const response = await fetch(url);
     const csv = await response.text();
@@ -524,10 +535,10 @@ function renderCards(){
     </div>
     <div class="button-row" style="margin-top: 10px;">
         <button class="download-btn" onclick="downloadTimeEarnPDF()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-            ⏱ Download Time Earn
+            ⏱ Time Earn
         </button>
         <button class="share-btn" onclick="shareTimeEarnPDF()" style="background: linear-gradient(135deg, #ea580c, #b45309);">
-            🔗 Share Time Earn
+            🔗 Share
         </button>
     </div>
     `;
@@ -641,12 +652,13 @@ function createSectionPDF(doc, section, rows) {
     doc.setTextColor(25, 35, 55);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('Detail Work Report', 3, 46);
-    doc.text('Item Summary', 126, 46);
+    // Margins and positioning brought up slightly
+    doc.text('Detail Work Report', 3, 38);
+    doc.text('Item Summary', 126, 38);
 
     doc.autoTable({
-        startY: 48,
-        margin: { top: 48, bottom: 15, left: 3, right: 87 }, 
+        startY: 40,
+        margin: { top: 40, bottom: 12, left: 3, right: 87 }, 
         head: [['Date', 'Description', 'Thick.', 'Qty']],
         body: bodyRows.map(r => r.row),
         theme: 'grid',
@@ -684,8 +696,8 @@ function createSectionPDF(doc, section, rows) {
     doc.setPage(startPage); 
 
     doc.autoTable({
-        startY: 48,
-        margin: { top: 48, bottom: 15, left: 126, right: 3 },
+        startY: 40,
+        margin: { top: 40, bottom: 12, left: 126, right: 3 },
         head: [['Item Description', 'Thick.', 'Total Qty']],
         body: summaryRows,
         theme: 'grid',
@@ -772,17 +784,22 @@ async function createPDF(section){
     return doc.output('blob');
 }
 
+// Download Button fix (appends link to body before clicking)
 async function downloadPDF(section){
     const blob = await createPDF(section);
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = section + '.pdf';
+    a.download = `${section} ${getMonthYearString()}.pdf`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
 }
 
 async function sharePDF(section){
     const blob = await createPDF(section);
-    const file = new File([blob], section + '.pdf', { type:'application/pdf' });
+    const filename = `${section} ${getMonthYearString()}.pdf`;
+    const file = new File([blob], filename, { type:'application/pdf' });
     if(navigator.canShare && navigator.canShare({files:[file]})){
         await navigator.share({ files:[file] });
     } else {
@@ -806,13 +823,17 @@ async function downloadAllPDF(){
     const blob = await createAllPDF();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'All_Sections_Report.pdf';
+    a.download = `All_Sections_Report ${getMonthYearString()}.pdf`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
 }
 
 async function shareAllPDF(){
     const blob = await createAllPDF();
-    const file = new File([blob], 'All_Sections_Report.pdf', { type:'application/pdf' });
+    const filename = `All_Sections_Report ${getMonthYearString()}.pdf`;
+    const file = new File([blob], filename, { type:'application/pdf' });
     if(navigator.canShare && navigator.canShare({files:[file]})){
         await navigator.share({ files:[file] });
     } else {
@@ -862,7 +883,6 @@ async function createTimeEarnPDFBlob() {
         });
     });
 
-    // Create array and sort alphabetically
     let aggregatedArray = Object.keys(itemAggregates).map(item => ({
         item: item,
         qty: itemAggregates[item]
@@ -893,18 +913,16 @@ async function createTimeEarnPDFBlob() {
     doc.setFontSize(10);
     doc.text('Annexure II', 200, 15, { align: 'right' });
     
-    // Using Canvas Workaround for flawless Hindi rendering
     const titleText = `${hinMonthStr} महीने ${hinYearStr} के लिए महत्वपूर्ण भागों का प्रदर्शन`;
-    addHindiText(doc, titleText, 25, 14, true, 'center');
+    addHindiText(doc, titleText, 22, 14, true, 'center');
     
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Performance of important sections for the month of ${engMonthStr}-${yearStr}`, 105, 34, { align: 'center' });
+    doc.text(`Performance of important sections for the month of ${engMonthStr}-${yearStr}`, 105, 30, { align: 'center' });
 
-    // Table rendering with perfect 10mm margins
     doc.autoTable({
-        startY: 38,
-        margin: { left: 10, right: 10 },
+        startY: 34,
+        margin: { top: 34, bottom: 15, left: 10, right: 10 },
         head: [
             [
                 { content: 'Description of Materials', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
@@ -936,7 +954,6 @@ async function createTimeEarnPDFBlob() {
     const pageHeight = doc.internal.pageSize.height;
     if (finalY > pageHeight - 20) { doc.addPage(); finalY = 20; }
 
-    // Hindi Footer using canvas
     const footerHindi = 'वरिष्ठ अनुभाग अभियंता / प्रभारी / बी एस एस / न्यू बंगाईगांव';
     addHindiText(doc, footerHindi, finalY, 10, true, 'right', 200);
 
@@ -955,8 +972,11 @@ async function downloadTimeEarnPDF() {
     const blob = await createTimeEarnPDFBlob();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'All_Section_Time_Earn_Report.pdf';
+    a.download = `All_Section_Time_Earn_Report ${getMonthYearString()}.pdf`;
+    document.body.appendChild(a);
     a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
 }
 
 async function shareTimeEarnPDF() {
@@ -965,7 +985,8 @@ async function shareTimeEarnPDF() {
         return;
     }
     const blob = await createTimeEarnPDFBlob();
-    const file = new File([blob], 'All_Section_Time_Earn_Report.pdf', { type:'application/pdf' });
+    const filename = `All_Section_Time_Earn_Report ${getMonthYearString()}.pdf`;
+    const file = new File([blob], filename, { type:'application/pdf' });
     if(navigator.canShare && navigator.canShare({files:[file]})){
         await navigator.share({ files:[file] });
     } else {
@@ -998,6 +1019,7 @@ window.addEventListener('appinstalled', () => {
     showToast('App Installed Successfully!');
 });
 
+// Using a non-caching registration or bypassing entirely if sw.js is updated
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {
         navigator.serviceWorker.register('sw.js').catch(err => {
