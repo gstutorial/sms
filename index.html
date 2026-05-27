@@ -643,14 +643,12 @@ async function generateReports(){
     showToast('Reports Generated Successfully');
 }
 
-// --- UPDATED FUNCTION: Toggle Cards UI with Accordion Logic ---
 function toggleCard(bodyId, arrowId) {
     const targetBody = document.getElementById(bodyId);
     const targetArrow = document.getElementById(arrowId);
     
     const isCurrentlyClosed = (targetBody.style.display === 'none' || targetBody.style.display === '');
 
-    // Step 1: Close all collapsible bodies and reset all arrows
     const allBodies = document.querySelectorAll('.card-collapsible');
     const allArrows = document.querySelectorAll('.toggle-arrow');
     
@@ -662,13 +660,11 @@ function toggleCard(bodyId, arrowId) {
         arrow.classList.remove('rotate-arrow');
     });
 
-    // Step 2: Open the target card if it was previously closed
     if (isCurrentlyClosed) {
         targetBody.style.display = 'block';
         targetArrow.classList.add('rotate-arrow');
     }
 }
-// --------------------------------------------------------------
 
 function renderCards(){
     const container = document.getElementById('results');
@@ -848,15 +844,16 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
+            // UPDATED: Table Header Slate-Blue Gradient
             if (data.section === 'head') {
                 const { x, y, width, height } = data.cell;
-                for (let i = 0; i <= height; i += 0.5) {
-                    let ratio = i / height;
-                    let r = Math.round(15 + (30 - 15) * ratio); 
-                    let g = Math.round(23 + (58 - 23) * ratio); 
-                    let b = Math.round(42 + (138 - 42) * ratio); 
+                for (let i = 0; i <= width; i += 1) { 
+                    let ratio = i / width;
+                    let r = Math.round(44 + (30 - 44) * ratio); // Slate Blue
+                    let g = Math.round(62 + (41 - 62) * ratio);
+                    let b = Math.round(80 + (59 - 80) * ratio);
                     doc.setFillColor(r, g, b);
-                    doc.rect(x, y + i, width, 0.6, 'F');
+                    doc.rect(x + i, y, 1.5, height, 'F');
                 }
             }
         }
@@ -885,15 +882,16 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
+            // UPDATED: Table Header Slate-Blue Gradient
             if (data.section === 'head') {
                 const { x, y, width, height } = data.cell;
-                for (let i = 0; i <= height; i += 0.5) {
-                    let ratio = i / height;
-                    let r = Math.round(2 + (4 - 2) * ratio);   
-                    let g = Math.round(44 + (120 - 44) * ratio); 
-                    let b = Math.round(34 + (87 - 34) * ratio);  
+                for (let i = 0; i <= width; i += 1) { 
+                    let ratio = i / width;
+                    let r = Math.round(44 + (30 - 44) * ratio); // Slate Blue
+                    let g = Math.round(62 + (41 - 62) * ratio);
+                    let b = Math.round(80 + (59 - 80) * ratio);
                     doc.setFillColor(r, g, b);
-                    doc.rect(x, y + i, width, 0.6, 'F');
+                    doc.rect(x + i, y, 1.5, height, 'F');
                 }
             }
         }
@@ -905,14 +903,27 @@ function createSectionPDF(doc, section, rows) {
     for (let i = startPage; i <= endPage; i++) {
         doc.setPage(i);
         
+        // UPDATED: Darker Blue Header Gradient
         const headerHeight = 30;
         for (let y = 0; y <= headerHeight; y += 0.5) {
             let ratio = y / headerHeight;
-            let r = Math.round(15 + (13 - 15) * ratio);
-            let g = Math.round(23 + (148 - 23) * ratio);
-            let b = Math.round(42 + (136 - 42) * ratio);
+            let r = Math.round(10 + (22 - 10) * ratio);  
+            let g = Math.round(20 + (45 - 20) * ratio);
+            let b = Math.round(40 + (110 - 40) * ratio);
             doc.setFillColor(r, g, b);
             doc.rect(0, y, 210, 0.6, 'F'); 
+        }
+
+        // UPDATED: Bottom Footer Gradient (Matching Header)
+        const footerHeight = 12;
+        const footerY = pageHeight - footerHeight;
+        for (let y = 0; y <= footerHeight; y += 0.5) {
+            let ratio = y / footerHeight;
+            let r = Math.round(10 + (22 - 10) * ratio);
+            let g = Math.round(20 + (45 - 20) * ratio);
+            let b = Math.round(40 + (110 - 40) * ratio);
+            doc.setFillColor(r, g, b);
+            doc.rect(0, footerY + y, 210, 0.6, 'F'); 
         }
 
         try {
@@ -936,13 +947,11 @@ function createSectionPDF(doc, section, rows) {
         const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
         doc.text(infoText, 105, 25, {align:'center'});
 
-        doc.setDrawColor(220, 220, 220);
-        doc.setLineWidth(0.5);
-        doc.line(3, pageHeight - 10, 207, pageHeight - 10);
+        // UPDATED: Footer text with contrasting color
         doc.setFontSize(9);
-        doc.setTextColor(120, 120, 120);
+        doc.setTextColor(230, 240, 250);
         doc.setFont('helvetica', 'normal');
-        doc.text('SSE/BSS/NBQS Work Report System', 105, pageHeight - 4, { align: 'center' });
+        doc.text('SSE/BSS/NBQS Work Report System', 105, pageHeight - 4.5, { align: 'center' });
     }
 }
 
