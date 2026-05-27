@@ -106,7 +106,7 @@ body{
     font-weight:700;
 }
 
-/* --- NEW CUSTOM DATE PICKER STYLES --- */
+/* --- CUSTOM DATE PICKER STYLES --- */
 .date-wrapper {
     position: relative;
     display: flex;
@@ -643,18 +643,32 @@ async function generateReports(){
     showToast('Reports Generated Successfully');
 }
 
+// --- UPDATED FUNCTION: Toggle Cards UI with Accordion Logic ---
 function toggleCard(bodyId, arrowId) {
-    const body = document.getElementById(bodyId);
-    const arrow = document.getElementById(arrowId);
+    const targetBody = document.getElementById(bodyId);
+    const targetArrow = document.getElementById(arrowId);
     
-    if (body.style.display === 'none' || body.style.display === '') {
-        body.style.display = 'block';
-        arrow.classList.add('rotate-arrow');
-    } else {
+    const isCurrentlyClosed = (targetBody.style.display === 'none' || targetBody.style.display === '');
+
+    // Step 1: Close all collapsible bodies and reset all arrows
+    const allBodies = document.querySelectorAll('.card-collapsible');
+    const allArrows = document.querySelectorAll('.toggle-arrow');
+    
+    allBodies.forEach(body => {
         body.style.display = 'none';
+    });
+    
+    allArrows.forEach(arrow => {
         arrow.classList.remove('rotate-arrow');
+    });
+
+    // Step 2: Open the target card if it was previously closed
+    if (isCurrentlyClosed) {
+        targetBody.style.display = 'block';
+        targetArrow.classList.add('rotate-arrow');
     }
 }
+// --------------------------------------------------------------
 
 function renderCards(){
     const container = document.getElementById('results');
