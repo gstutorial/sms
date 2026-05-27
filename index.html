@@ -828,7 +828,8 @@ function createSectionPDF(doc, section, rows) {
         body: bodyRows.map(r => r.row),
         theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1, valign: 'middle' },
-        headStyles: { textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+        // Added lineWidth: 0 to remove table header cell divisions
+        headStyles: { textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center', lineWidth: 0 },
         columnStyles: {
             0: { cellWidth: 22, halign: 'center', fontStyle: 'bold' },
             1: { cellWidth: 65 }, 
@@ -836,7 +837,10 @@ function createSectionPDF(doc, section, rows) {
             3: { cellWidth: 15, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
-            if (data.section === 'head') { data.cell.styles.fillColor = null; }
+            if (data.section === 'head') { 
+                data.cell.styles.fillColor = null; 
+                data.cell.styles.lineWidth = 0; // Prevent borders from drawing in header
+            }
             if (data.section === 'body') {
                 const rowData = bodyRows[data.row.index];
                 const bgColor = rowData.group % 2 === 0 ? [255, 255, 255] : [235, 243, 255]; 
@@ -844,16 +848,26 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
-            // UPDATED: Table Header Slate-Blue Gradient
+            // Smooth Left-to-Right Linear Gradient for Table Headers without overlapping right border
             if (data.section === 'head') {
                 const { x, y, width, height } = data.cell;
-                for (let i = 0; i <= width; i += 1) { 
-                    let ratio = i / width;
-                    let r = Math.round(44 + (30 - 44) * ratio); // Slate Blue
-                    let g = Math.round(62 + (41 - 62) * ratio);
-                    let b = Math.round(80 + (59 - 80) * ratio);
+                const tableStartX = data.table.pageStartX;
+                const tableWidth = data.table.width;
+                
+                for (let i = 0; i < width; i += 0.5) { 
+                    let globalX = x + i;
+                    let ratio = (globalX - tableStartX) / tableWidth;
+                    ratio = Math.max(0, Math.min(1, ratio));
+                    
+                    // Smooth, professional Blue gradient transition (Blue 900 to Blue 600)
+                    let r = Math.round(30 + (37 - 30) * ratio);
+                    let g = Math.round(58 + (99 - 58) * ratio);
+                    let b = Math.round(138 + (235 - 138) * ratio);
+                    
                     doc.setFillColor(r, g, b);
-                    doc.rect(x + i, y, 1.5, height, 'F');
+                    // Using Math.min ensures the gradient never spills past the cell's actual width
+                    let rectWidth = Math.min(0.6, width - i);
+                    doc.rect(x + i, y, rectWidth, height, 'F');
                 }
             }
         }
@@ -868,30 +882,44 @@ function createSectionPDF(doc, section, rows) {
         body: summaryRows,
         theme: 'grid',
         styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1, valign: 'middle' },
-        headStyles: { textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center' },
+        // Added lineWidth: 0 to remove table header cell divisions
+        headStyles: { textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center', lineWidth: 0 },
         columnStyles: {
             0: { cellWidth: 46 }, 
             1: { cellWidth: 18, halign: 'center' },
             2: { cellWidth: 17, halign: 'center', fontStyle: 'bold' }
         },
         didParseCell: function(data) {
-            if (data.section === 'head') { data.cell.styles.fillColor = null; }
+            if (data.section === 'head') { 
+                data.cell.styles.fillColor = null; 
+                data.cell.styles.lineWidth = 0; // Prevent borders from drawing in header
+            }
             if (data.section === 'body') {
                 const bgColor = data.row.index % 2 === 0 ? [255, 255, 255] : [240, 248, 245]; 
                 data.cell.styles.fillColor = bgColor;
             }
         },
         willDrawCell: function(data) {
-            // UPDATED: Table Header Slate-Blue Gradient
+            // Smooth Left-to-Right Linear Gradient for Table Headers without overlapping right border
             if (data.section === 'head') {
                 const { x, y, width, height } = data.cell;
-                for (let i = 0; i <= width; i += 1) { 
-                    let ratio = i / width;
-                    let r = Math.round(44 + (30 - 44) * ratio); // Slate Blue
-                    let g = Math.round(62 + (41 - 62) * ratio);
-                    let b = Math.round(80 + (59 - 80) * ratio);
+                const tableStartX = data.table.pageStartX;
+                const tableWidth = data.table.width;
+                
+                for (let i = 0; i < width; i += 0.5) { 
+                    let globalX = x + i;
+                    let ratio = (globalX - tableStartX) / tableWidth;
+                    ratio = Math.max(0, Math.min(1, ratio));
+                    
+                    // Smooth, professional Blue gradient transition (Blue 900 to Blue 600)
+                    let r = Math.round(30 + (37 - 30) * ratio);
+                    let g = Math.round(58 + (99 - 58) * ratio);
+                    let b = Math.round(138 + (235 - 138) * ratio);
+                    
                     doc.setFillColor(r, g, b);
-                    doc.rect(x + i, y, 1.5, height, 'F');
+                    // Using Math.min ensures the gradient never spills past the cell's actual width
+                    let rectWidth = Math.min(0.6, width - i);
+                    doc.rect(x + i, y, rectWidth, height, 'F');
                 }
             }
         }
@@ -903,27 +931,27 @@ function createSectionPDF(doc, section, rows) {
     for (let i = startPage; i <= endPage; i++) {
         doc.setPage(i);
         
-        // UPDATED: Darker Blue Header Gradient
+        // Professional Left-to-Right Header Gradient (Slate 900 to Blue 900)
         const headerHeight = 30;
-        for (let y = 0; y <= headerHeight; y += 0.5) {
-            let ratio = y / headerHeight;
-            let r = Math.round(10 + (22 - 10) * ratio);  
-            let g = Math.round(20 + (45 - 20) * ratio);
-            let b = Math.round(40 + (110 - 40) * ratio);
+        for (let x = 0; x <= 210; x += 0.5) {
+            let ratio = x / 210;
+            let r = Math.round(15 + (30 - 15) * ratio);  
+            let g = Math.round(23 + (58 - 23) * ratio);
+            let b = Math.round(42 + (138 - 42) * ratio);
             doc.setFillColor(r, g, b);
-            doc.rect(0, y, 210, 0.6, 'F'); 
+            doc.rect(x, 0, 0.6, headerHeight, 'F'); 
         }
 
-        // UPDATED: Bottom Footer Gradient (Matching Header)
+        // Professional Left-to-Right Footer Gradient (Matching Header)
         const footerHeight = 12;
         const footerY = pageHeight - footerHeight;
-        for (let y = 0; y <= footerHeight; y += 0.5) {
-            let ratio = y / footerHeight;
-            let r = Math.round(10 + (22 - 10) * ratio);
-            let g = Math.round(20 + (45 - 20) * ratio);
-            let b = Math.round(40 + (110 - 40) * ratio);
+        for (let x = 0; x <= 210; x += 0.5) {
+            let ratio = x / 210;
+            let r = Math.round(15 + (30 - 15) * ratio);
+            let g = Math.round(23 + (58 - 23) * ratio);
+            let b = Math.round(42 + (138 - 42) * ratio);
             doc.setFillColor(r, g, b);
-            doc.rect(0, footerY + y, 210, 0.6, 'F'); 
+            doc.rect(x, footerY, 0.6, footerHeight, 'F'); 
         }
 
         try {
@@ -947,7 +975,6 @@ function createSectionPDF(doc, section, rows) {
         const infoText = `SECTION: ${section}     |     FROM: ${fromDate}     |     TO: ${toDate}`;
         doc.text(infoText, 105, 25, {align:'center'});
 
-        // UPDATED: Footer text with contrasting color
         doc.setFontSize(9);
         doc.setTextColor(230, 240, 250);
         doc.setFont('helvetica', 'normal');
@@ -1081,18 +1108,19 @@ async function createTimeEarnPDFBlob() {
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    doc.text('Annexure II', 200, 15, { align: 'right' });
+    // Margins reduced, Y coordinate pushed up
+    doc.text('Annexure II', 200, 8, { align: 'right' }); 
     
     const titleText = `${hinMonthStr} महीने ${hinYearStr} के लिए महत्वपूर्ण भागों का प्रदर्शन`;
-    addHindiText(doc, titleText, 22, 14, true, 'center');
+    addHindiText(doc, titleText, 12, 14, true, 'center'); 
     
     doc.setFontSize(11);
     doc.setFont('helvetica', 'normal');
-    doc.text(`Performance of important sections for the month of ${engMonthStr}-${yearStr}`, 105, 30, { align: 'center' });
+    doc.text(`Performance of important sections for the month of ${engMonthStr}-${yearStr}`, 105, 18, { align: 'center' });
 
     doc.autoTable({
-        startY: 34,
-        margin: { top: 34, bottom: 15, left: 10, right: 10 },
+        startY: 22, // Pulled up from 34
+        margin: { top: 22, bottom: 10, left: 10, right: 10 }, // Compressed margins
         head: [
             [
                 { content: 'Description of Materials', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
@@ -1120,9 +1148,10 @@ async function createTimeEarnPDFBlob() {
         }
     });
 
-    let finalY = doc.lastAutoTable.finalY + 15;
+    let finalY = doc.lastAutoTable.finalY + 8; // Compressed from 15
     const pageHeight = doc.internal.pageSize.height;
-    if (finalY > pageHeight - 20) { doc.addPage(); finalY = 20; }
+    // Lowered threshold to maximize data fitting on one page
+    if (finalY > pageHeight - 15) { doc.addPage(); finalY = 15; }
 
     const footerHindi = 'वरिष्ठ अनुभाग अभियंता / प्रभारी / बी एस एस / न्यू बंगाईगांव';
     addHindiText(doc, footerHindi, finalY, 10, true, 'right', 200);
