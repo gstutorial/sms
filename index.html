@@ -4,7 +4,7 @@
 <head>
 
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 
 <title>SMS Work Report Generator</title>
 
@@ -37,6 +37,7 @@ body{
     min-height:100vh;
     padding:10px;
     color:white;
+    touch-action: manipulation; /* Prevents double-tap zooming */
 }
 
 .container{
@@ -80,19 +81,26 @@ body{
     gap:18px;
 }
 
-.left-panel{
-    width:100%;
-}
-
-.right-panel{
-    width:100%;
+.input-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    animation: fadeIn 0.4s ease-in-out;
 }
 
 .filter-box{
+    width: 100%;
+    max-width: 450px; /* Centers nicely on desktop */
     background: rgba(255,255,255,0.06);
     border-radius:24px;
     padding:18px;
     border: 1px solid rgba(255,255,255,0.08);
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(-5px); }
+    to { opacity: 1; transform: translateY(0); }
 }
 
 .input-group{
@@ -190,6 +198,11 @@ body{
     margin-top:15px;
     font-size:15px;
     font-weight:700;
+}
+
+.results-section {
+    width: 100%;
+    animation: fadeIn 0.4s ease-in-out;
 }
 
 .results{
@@ -321,6 +334,30 @@ body{
     background: linear-gradient(135deg, #7c3aed, #2563eb);
 }
 
+.back-btn {
+    width: 100%;
+    max-width: 450px;
+    margin: 20px auto 0;
+    border: none;
+    border-radius: 18px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    font-size: 16px;
+    font-weight: 800;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: 0.3s;
+}
+
+.back-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
 .footer{
     text-align:center;
     margin-top:22px;
@@ -372,16 +409,6 @@ body{
 }
 
 @media(min-width:992px){
-    .main-layout{
-        display:grid;
-        grid-template-columns:370px 1fr;
-        gap:22px;
-        align-items:start;
-    }
-    .left-panel{
-        position:sticky;
-        top:18px;
-    }
     .results{
         grid-template-columns:1fr 1fr;
     }
@@ -407,60 +434,64 @@ Generate Section Wise Work Reports
 
 <div class="main-layout">
 
-<div class="left-panel">
+    <div class="input-section" id="inputSection">
+        <div class="filter-box">
+            <div class="input-group">
+                <label class="input-label">From Date</label>
+                <div class="date-wrapper">
+                    <div class="date-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                    <input type="date" id="fromDate" class="date-input" onclick="try{this.showPicker()}catch(e){}">
+                </div>
+            </div>
 
-<div class="filter-box">
+            <div class="input-group">
+                <label class="input-label">To Date</label>
+                <div class="date-wrapper">
+                    <div class="date-icon">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                            <line x1="16" y1="2" x2="16" y2="6"></line>
+                            <line x1="8" y1="2" x2="8" y2="6"></line>
+                            <line x1="3" y1="10" x2="21" y2="10"></line>
+                        </svg>
+                    </div>
+                    <input type="date" id="toDate" class="date-input" onclick="try{this.showPicker()}catch(e){}">
+                </div>
+            </div>
 
-<div class="input-group">
-    <label class="input-label">From Date</label>
-    <div class="date-wrapper">
-        <div class="date-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
+            <div class="action-buttons">
+                <button class="default-btn" onclick="setDefaultDates()">
+                📅 Default
+                </button>
+                <button class="generate-btn" onclick="generateReports()">
+                📄 Generate
+                </button>
+            </div>
         </div>
-        <input type="date" id="fromDate" class="date-input" onclick="try{this.showPicker()}catch(e){}">
-    </div>
-</div>
 
-<div class="input-group">
-    <label class="input-label">To Date</label>
-    <div class="date-wrapper">
-        <div class="date-icon">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-            </svg>
+        <div class="loading" id="loading">
+        Fetching Google Sheet Data...
         </div>
-        <input type="date" id="toDate" class="date-input" onclick="try{this.showPicker()}catch(e){}">
     </div>
-</div>
 
-<div class="action-buttons">
-    <button class="default-btn" onclick="setDefaultDates()">
-    📅 Default
-    </button>
-    <button class="generate-btn" onclick="generateReports()">
-    📄 Generate
-    </button>
-</div>
-
-</div>
-
-<div class="loading" id="loading">
-Fetching Google Sheet Data...
-</div>
-
-</div>
-
-<div class="right-panel">
-<div class="results" id="results"></div>
-</div>
+    <div class="results-section" id="resultsSection" style="display: none;">
+        <div class="results" id="results"></div>
+        
+        <button class="back-btn" onclick="goBackToInput()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Date Selection
+        </button>
+    </div>
 
 </div>
 
@@ -638,8 +669,24 @@ async function generateReports(){
     });
 
     renderCards();
+    
+    // Switch Views
     document.getElementById('loading').style.display='none';
+    document.getElementById('inputSection').style.display='none';
+    document.getElementById('resultsSection').style.display='block';
+    
     showToast('Reports Generated Successfully');
+}
+
+// Function to return to input screen and reset
+function goBackToInput() {
+    document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('inputSection').style.display = 'flex';
+    document.getElementById('results').innerHTML = '';
+    
+    // Reset dates
+    document.getElementById('fromDate').value = '';
+    document.getElementById('toDate').value = '';
 }
 
 function toggleCard(bodyId, arrowId) {
@@ -846,7 +893,6 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
-            // FIXED: Using completely safe hardcoded margin calculation instead of undefined pageStartX
             if (data.section === 'head') {
                 let tableW = 120; // 210 (page) - 3 (left margin) - 87 (right margin)
                 let relativeX = data.cell.x - 3;
@@ -893,7 +939,6 @@ function createSectionPDF(doc, section, rows) {
             }
         },
         willDrawCell: function(data) {
-            // FIXED: Using completely safe hardcoded margin calculation instead of undefined pageStartX
             if (data.section === 'head') {
                 let tableW = 81; // 210 (page) - 126 (left margin) - 3 (right margin)
                 let relativeX = data.cell.x - 126;
@@ -1095,7 +1140,6 @@ async function createTimeEarnPDFBlob() {
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);
-    // FIXED OVERLAP: Safely spaced the Y coordinates for Annexure, Hindi, and English text
     doc.text('Annexure II', 200, 7, { align: 'right' }); 
     
     const titleText = `${hinMonthStr} महीने ${hinYearStr} के लिए महत्वपूर्ण भागों का प्रदर्शन`;
@@ -1106,7 +1150,7 @@ async function createTimeEarnPDFBlob() {
     doc.text(`Performance of important sections for the month of ${engMonthStr}-${yearStr}`, 105, 20, { align: 'center' });
 
     doc.autoTable({
-        startY: 25, // Adjusted start to respect the newly spaced text
+        startY: 25, 
         margin: { top: 25, bottom: 10, left: 10, right: 10 },
         head: [
             [
@@ -1135,7 +1179,6 @@ async function createTimeEarnPDFBlob() {
         }
     });
 
-    // FIXED GAP: Adding a consistent offset (+12) effectively pushing down the final signature texts by ~3 lines.
     let finalY = doc.lastAutoTable.finalY + 12; 
     const pageHeight = doc.internal.pageSize.height;
     if (finalY > pageHeight - 15) { doc.addPage(); finalY = 15; }
