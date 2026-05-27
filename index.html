@@ -444,10 +444,10 @@ Generate Section Wise Work Reports
 
 <div class="action-buttons">
     <button class="default-btn" onclick="setDefaultDates()">
-    ЁЯУЕ Default
+    📅 Default
     </button>
     <button class="generate-btn" onclick="generateReports()">
-    ЁЯУД Generate
+    📄 Generate
     </button>
 </div>
 
@@ -475,7 +475,7 @@ App Created By Gobind Sharma
 <div id="toast"></div>
 
 <button id="installAppBtn" class="install-fab">
-    ЁЯУ▓ Install App
+    📲 Install App
 </button>
 
 <script>
@@ -512,7 +512,7 @@ function getMonthYearString() {
 }
 
 function toHindiDigits(num) {
-    const hindiDigits = ['реж','рез','реи','рей','рек','рел','рем','рен','рео','реп'];
+    const hindiDigits = ['०','१','२','३','४','५','६','७','८','९'];
     return String(num).split('').map(d => hindiDigits[d] || d).join('');
 }
 
@@ -676,7 +676,7 @@ function renderCards(){
     allCard.innerHTML = `
     <div class="card-header-toggle" onclick="toggleCard('body-all', 'arrow-all')">
         <div class="header-left">
-            <div class="section-icon">ЁЯУЪ</div>
+            <div class="section-icon">📚</div>
             <div class="section-name">ALL SECTIONS</div>
         </div>
         <div class="header-right">
@@ -687,15 +687,15 @@ function renderCards(){
     </div>
     <div class="card-collapsible" id="body-all">
         <div class="button-row">
-            <button class="download-btn" onclick="downloadAllPDF()">тмЗ Download</button>
-            <button class="share-btn" onclick="shareAllPDF()">ЁЯФЧ Share</button>
+            <button class="download-btn" onclick="downloadAllPDF()">⬇ Download</button>
+            <button class="share-btn" onclick="shareAllPDF()">🔗 Share</button>
         </div>
         <div class="button-row" style="margin-top: 10px;">
             <button class="download-btn" onclick="downloadTimeEarnPDF()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                тП▒ Time Earn
+                ⏱ Time Earn
             </button>
             <button class="share-btn" onclick="shareTimeEarnPDF()" style="background: linear-gradient(135deg, #ea580c, #b45309);">
-                ЁЯФЧ Share
+                🔗 Share
             </button>
         </div>
     </div>
@@ -715,7 +715,7 @@ function renderCards(){
         card.innerHTML = `
         <div class="card-header-toggle" onclick="toggleCard('body-${safeId}', 'arrow-${safeId}')">
             <div class="header-left">
-                <div class="section-icon">ЁЯУЛ</div>
+                <div class="section-icon">📋</div>
                 <div class="section-name">${section}</div>
             </div>
             <div class="header-right">
@@ -741,8 +741,8 @@ function renderCards(){
                 </div>
             </div>
             <div class="button-row">
-                <button class="download-btn" onclick="downloadPDF('${section}')">тмЗ Download</button>
-                <button class="share-btn" onclick="sharePDF('${section}')">ЁЯФЧ Share</button>
+                <button class="download-btn" onclick="downloadPDF('${section}')">⬇ Download</button>
+                <button class="share-btn" onclick="sharePDF('${section}')">🔗 Share</button>
             </div>
         </div>
         `;
@@ -1071,7 +1071,7 @@ async function createTimeEarnPDFBlob() {
     const tDate = new Date(tParts[0], tParts[1] - 1, tParts[2]);
 
     const engMonths = ['January','February','March','April','May','June','July','August','September','October','November','December'];
-    const hinMonths = ['рдЬрдирд╡рд░реА','рдлрд░рд╡рд░реА','рдорд╛рд░реНрдЪ','рдЕрдкреНрд░реИрд▓','рдордИ','рдЬреВрди','рдЬреБрд▓рд╛рдИ','рдЕрдЧрд╕реНрдд','рд╕рд┐рддрдВрдмрд░','рдЕрдХреНрдЯреВрдмрд░','рдирд╡рдВрдмрд░','рджрд┐рд╕рдВрдмрд░'];
+    const hinMonths = ['जनवरी','फरवरी','मार्च','अप्रैल','मई','जून','जुलाई','अगस्त','सितंबर','अक्टूबर','नवंबर','दिसंबर'];
 
     const mIndex = tDate.getMonth();
     const yearStr = String(tDate.getFullYear());
@@ -1083,7 +1083,7 @@ async function createTimeEarnPDFBlob() {
     doc.setFontSize(10);
     doc.text('Annexure II', 200, 15, { align: 'right' });
     
-    const titleText = `${hinMonthStr} рдорд╣реАрдиреЗ ${hinYearStr} рдХреЗ рд▓рд┐рдП рдорд╣рддреНрд╡рдкреВрд░реНрдг рднрд╛рдЧреЛрдВ рдХрд╛ рдкреНрд░рджрд░реНрд╢рди`;
+    const titleText = `${hinMonthStr} महीने ${hinYearStr} के लिए महत्वपूर्ण भागों का प्रदर्शन`;
     addHindiText(doc, titleText, 22, 14, true, 'center');
     
     doc.setFontSize(11);
@@ -1124,7 +1124,7 @@ async function createTimeEarnPDFBlob() {
     const pageHeight = doc.internal.pageSize.height;
     if (finalY > pageHeight - 20) { doc.addPage(); finalY = 20; }
 
-    const footerHindi = 'рд╡рд░рд┐рд╖реНрда рдЕрдиреБрднрд╛рдЧ рдЕрднрд┐рдпрдВрддрд╛ / рдкреНрд░рднрд╛рд░реА / рдмреА рдПрд╕ рдПрд╕ / рдиреНрдпреВ рдмрдВрдЧрд╛рдИрдЧрд╛рдВрд╡';
+    const footerHindi = 'वरिष्ठ अनुभाग अभियंता / प्रभारी / बी एस एस / न्यू बंगाईगांव';
     addHindiText(doc, footerHindi, finalY, 10, true, 'right', 200);
 
     doc.setFontSize(10);
