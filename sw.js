@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sms-report-cache-v1';
+const CACHE_NAME = 'sms-report-cache-v2';
 const urlsToCache = [
   './',
   './index.html',
