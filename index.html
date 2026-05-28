@@ -340,6 +340,10 @@ body{
     font-size:13px;
     font-weight:800;
     cursor:pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px; /* Spaces the SVG icon and text */
 }
 
 .download-btn{
@@ -455,7 +459,6 @@ SMS Work Report Generator
 
 <div class="main-layout">
 
-    <!-- Input Section: Centered Date Picker -->
     <div class="input-section" id="inputSection">
         <div class="filter-box">
             <div class="input-group">
@@ -503,11 +506,9 @@ SMS Work Report Generator
         </div>
     </div>
 
-    <!-- Results Section: Hidden initially -->
     <div class="results-section" id="resultsSection" style="display: none;">
         <div class="results" id="results"></div>
         
-        <!-- Back Button -->
         <button class="back-btn" onclick="goBackToInput()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -757,15 +758,23 @@ function renderCards(){
     </div>
     <div class="card-collapsible" id="body-all">
         <div class="button-row">
-            <button class="download-btn" onclick="downloadAllPDF()">⬇ Download</button>
-            <button class="share-btn" onclick="shareAllPDF()">🔗 Share</button>
+            <button class="download-btn" onclick="downloadAllPDF()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Download
+            </button>
+            <button class="share-btn" onclick="shareAllPDF()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                Share
+            </button>
         </div>
         <div class="button-row" style="margin-top: 10px;">
             <button class="download-btn" onclick="downloadTimeEarnPDF()" style="background: linear-gradient(135deg, #f59e0b, #d97706);">
-                ⏱ Time Earn
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Time Earn
             </button>
             <button class="share-btn" onclick="shareTimeEarnPDF()" style="background: linear-gradient(135deg, #ea580c, #b45309);">
-                🔗 Share
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                Share
             </button>
         </div>
     </div>
@@ -828,8 +837,14 @@ function renderCards(){
                 </div>
             </div>
             <div class="button-row">
-                <button class="download-btn" onclick="downloadPDF('${section}')">⬇ Download</button>
-                <button class="share-btn" onclick="sharePDF('${section}')">🔗 Share</button>
+                <button class="download-btn" onclick="downloadPDF('${section}')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    Download
+                </button>
+                <button class="share-btn" onclick="sharePDF('${section}')">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                    Share
+                </button>
             </div>
         </div>
         `;
