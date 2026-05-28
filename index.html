@@ -343,7 +343,7 @@ body{
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 6px; /* Spaces the SVG icon and text */
+    gap: 6px; 
 }
 
 .download-btn{
@@ -354,8 +354,11 @@ body{
     background: linear-gradient(135deg, #2563eb, #38bdf8);
 }
 
+/* Premium Dark Gradient for ALL SECTIONS Card */
 .all-card{
-    background: linear-gradient(135deg, #7c3aed, #2563eb);
+    background: linear-gradient(135deg, #1e293b, #0f172a);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
 }
 
 .back-btn {
@@ -435,6 +438,11 @@ body{
 @media(min-width:992px){
     .masonry-grid {
         grid-template-columns: 1fr 1fr;
+    }
+    .all-card {
+        align-self: center; /* Centers the card horizontally */
+        width: 100%;
+        max-width: 500px; /* Restricts the full-width stretch */
     }
 }
 
