@@ -75,6 +75,13 @@ body{
     font-size:14px;
 }
 
+.creator-text {
+    margin-top: 5px;
+    font-size: 13px;
+    color: #94a3b8;
+    font-weight: 600;
+}
+
 .main-layout{
     display:flex;
     flex-direction:column;
@@ -206,9 +213,22 @@ body{
 }
 
 .results{
-    display:grid;
-    grid-template-columns:1fr;
+    display:flex;
+    flex-direction: column;
     gap:14px;
+}
+
+.masonry-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 14px;
+    align-items: start;
+}
+
+.masonry-col {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
 }
 
 .section-card{
@@ -409,8 +429,8 @@ body{
 }
 
 @media(min-width:992px){
-    .results{
-        grid-template-columns:1fr 1fr;
+    .masonry-grid {
+        grid-template-columns: 1fr 1fr;
     }
 }
 
@@ -429,11 +449,13 @@ SMS Work Report Generator
 </div>
 
 <div class="subtitle">
-Generate Section Wise Work Reports
+    Generate Section Wise Work Reports
+    <div class="creator-text">App Created By Gobind Sharma</div>
 </div>
 
 <div class="main-layout">
 
+    <!-- Input Section: Centered Date Picker -->
     <div class="input-section" id="inputSection">
         <div class="filter-box">
             <div class="input-group">
@@ -481,9 +503,11 @@ Generate Section Wise Work Reports
         </div>
     </div>
 
+    <!-- Results Section: Hidden initially -->
     <div class="results-section" id="resultsSection" style="display: none;">
         <div class="results" id="results"></div>
         
+        <!-- Back Button -->
         <button class="back-btn" onclick="goBackToInput()">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
                 <line x1="19" y1="12" x2="5" y2="12"></line>
@@ -496,8 +520,7 @@ Generate Section Wise Work Reports
 </div>
 
 <div class="footer">
-SSE/BSS/NBQS Work Report System<br>
-App Created By Gobind Sharma
+SSE/BSS/NBQS Work Report System
 </div>
 
 </div>
@@ -716,6 +739,7 @@ function renderCards(){
     const container = document.getElementById('results');
     container.innerHTML='';
 
+    // 1. Create ALL SECTIONS card (Full Width at Top)
     const allCard = document.createElement('div');
     allCard.className = 'section-card all-card';
 
@@ -748,6 +772,23 @@ function renderCards(){
     `;
     container.appendChild(allCard);
 
+    // 2. Create the Masonry Grid Wrapper
+    const masonryGrid = document.createElement('div');
+    masonryGrid.className = 'masonry-grid';
+
+    // 3. Create Left and Right Columns
+    const colLeft = document.createElement('div');
+    colLeft.className = 'masonry-col';
+
+    const colRight = document.createElement('div');
+    colRight.className = 'masonry-col';
+
+    // Add columns to grid wrapper, grid to container
+    masonryGrid.appendChild(colLeft);
+    masonryGrid.appendChild(colRight);
+    container.appendChild(masonryGrid);
+
+    // 4. Populate Cards into Alternating Columns
     Object.keys(sectionData).forEach((section, index)=>{
         const rows = sectionData[section];
         let totalQty = 0;
@@ -792,7 +833,13 @@ function renderCards(){
             </div>
         </div>
         `;
-        container.appendChild(card);
+        
+        // Even indexes go left, Odd indexes go right
+        if (index % 2 === 0) {
+            colLeft.appendChild(card);
+        } else {
+            colRight.appendChild(card);
+        }
     });
 }
 
