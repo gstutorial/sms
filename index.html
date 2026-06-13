@@ -748,6 +748,22 @@ function renderCards(){
     const container = document.getElementById('results');
     container.innerHTML='';
 
+    // Calculate Grand Total Time Earned
+    let totalTimeEarned = 0;
+    let itemAggregates = {};
+    Object.keys(sectionData).forEach(sec => {
+        sectionData[sec].forEach(row => {
+            let item = row.item.trim();
+            if(!itemAggregates[item]) itemAggregates[item] = 0;
+            itemAggregates[item] += Number(row.quantity);
+        });
+    });
+    Object.keys(itemAggregates).forEach(item => {
+        let timePerUnit = findTimeAllotted(item);
+        totalTimeEarned += (itemAggregates[item] * timePerUnit);
+    });
+    const formattedTotalTime = totalTimeEarned.toFixed(3);
+
     // 1. Create ALL SECTIONS card (Full Width at Top)
     const allCard = document.createElement('div');
     allCard.className = 'section-card all-card';
@@ -765,6 +781,13 @@ function renderCards(){
         </div>
     </div>
     <div class="card-collapsible" id="body-all">
+        <div class="summary-grid" style="grid-template-columns: 1fr; margin-bottom: 12px;">
+            <div class="summary-box" style="background: rgba(245, 158, 11, 0.15); border: 1px solid rgba(245, 158, 11, 0.3);">
+                <div class="summary-number" style="color: #fcd34d;">${formattedTotalTime}</div>
+                <div class="summary-label" style="color: #fde68a; font-weight: bold;">Total Time Earned (m/hrs)</div>
+            </div>
+        </div>
+
         <div class="button-row">
             <button class="download-btn" onclick="downloadAllPDF()">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
@@ -1189,10 +1212,13 @@ async function createTimeEarnPDFBlob() {
     aggregatedArray.sort((a,b) => a.item.localeCompare(b.item));
 
     let bodyRows = [];
+    let grandTotalTime = 0; // NEW: Grand Total tracking
+
     aggregatedArray.forEach(data => {
         let timePerUnit = findTimeAllotted(data.item);
-        let totalTime = (data.qty * timePerUnit).toFixed(3);
-        bodyRows.push([ data.item, "", "", "", data.qty.toString(), totalTime ]);
+        let totalTime = (data.qty * timePerUnit);
+        grandTotalTime += totalTime;
+        bodyRows.push([ data.item, "", "", "", data.qty.toString(), totalTime.toFixed(3) ]);
     });
 
     const toDateVal = document.getElementById('toDate').value;
@@ -1236,9 +1262,14 @@ async function createTimeEarnPDFBlob() {
             ]
         ],
         body: bodyRows,
+        foot: [[
+            { content: 'Total Time Earned', colSpan: 5, styles: { halign: 'right', fontStyle: 'bold' } },
+            { content: grandTotalTime.toFixed(3), styles: { halign: 'center', fontStyle: 'bold' } }
+        ]],
         theme: 'grid',
         styles: { fontSize: 8.5, textColor: [0, 0, 0], lineColor: [0, 0, 0], lineWidth: 0.1, cellPadding: 1.5, valign: 'middle' },
         headStyles: { fillColor: [255, 255, 255], textColor: [0, 0, 0], fontStyle: 'bold' },
+        footStyles: { fillColor: [230, 230, 230], textColor: [0, 0, 0], fontStyle: 'bold' },
         columnStyles: {
             0: { cellWidth: 70 },
             1: { cellWidth: 20, halign: 'center' },
