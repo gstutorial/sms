@@ -748,9 +748,11 @@ function renderCards(){
     const container = document.getElementById('results');
     container.innerHTML='';
 
-    // Calculate Grand Total Time Earned
+    // Calculate Grand Total Time Earned & Track Missing Time Items
     let totalTimeEarned = 0;
     let itemAggregates = {};
+    let missingTimeItems = new Set();
+
     Object.keys(sectionData).forEach(sec => {
         sectionData[sec].forEach(row => {
             let item = row.item.trim();
@@ -760,9 +762,29 @@ function renderCards(){
     });
     Object.keys(itemAggregates).forEach(item => {
         let timePerUnit = findTimeAllotted(item);
+        if (timePerUnit === 0) {
+            missingTimeItems.add(item); // Item has no time allotted value
+        }
         totalTimeEarned += (itemAggregates[item] * timePerUnit);
     });
     const formattedTotalTime = totalTimeEarned.toFixed(3);
+
+    // Prepare Missing Items HTML if there are any
+    let missingItemsHtml = '';
+    if (missingTimeItems.size > 0) {
+        const itemsList = Array.from(missingTimeItems).join('  •  ');
+        missingItemsHtml = `
+            <div style="margin-bottom: 12px; padding: 12px; background: rgba(239, 68, 68, 0.12); border: 1px solid rgba(239, 68, 68, 0.25); border-radius: 14px;">
+                <div style="color: #fca5a5; font-size: 13px; font-weight: 700; margin-bottom: 5px; display: flex; align-items: center; gap: 6px;">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    Items Missing Time Allotted Value:
+                </div>
+                <div style="color: #fecaca; font-size: 11px; line-height: 1.5; font-weight: 600;">
+                    ${itemsList}
+                </div>
+            </div>
+        `;
+    }
 
     // 1. Create ALL SECTIONS card (Full Width at Top)
     const allCard = document.createElement('div');
@@ -787,6 +809,8 @@ function renderCards(){
                 <div class="summary-label" style="color: #fde68a; font-weight: bold;">Total Time Earned (m/hrs)</div>
             </div>
         </div>
+
+        ${missingItemsHtml}
 
         <div class="button-row">
             <button class="download-btn" onclick="downloadAllPDF()">
