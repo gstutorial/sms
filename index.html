@@ -359,6 +359,12 @@ body{
     background: linear-gradient(135deg, #22c35e, #14a44d);
 }
 
+.whatsapp-btn img {
+    width: 18px;
+    height: 18px;
+    object-fit: contain;
+}
+
 /* Premium Dark Gradient for ALL SECTIONS Card */
 .all-card{
     background: linear-gradient(135deg, #1e293b, #0f172a);
@@ -826,8 +832,8 @@ function renderCards(){
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                 Share
             </button>
-            <button class="whatsapp-btn" onclick="shareAllWhatsApp('${formattedTotalTime}')">
-                📲 WhatsApp
+            <button class="whatsapp-btn" onclick="shareWhatsAppDirect('all')">
+                <img src="whatsapp.png" alt="WhatsApp">
             </button>
         </div>
         <div class="button-row" style="margin-top: 10px;">
@@ -838,6 +844,9 @@ function renderCards(){
             <button class="share-btn" onclick="shareTimeEarnPDF()" style="background: linear-gradient(135deg, #ea580c, #b45309);">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                 Share
+            </button>
+            <button class="whatsapp-btn" onclick="shareWhatsAppDirect('timeEarn')" style="background: linear-gradient(135deg, #ea580c, #b45309);">
+                <img src="whatsapp.png" alt="WhatsApp">
             </button>
         </div>
     </div>
@@ -908,8 +917,8 @@ function renderCards(){
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                     Share
                 </button>
-                <button class="whatsapp-btn" onclick="shareWhatsApp('${section}', '${rows.length}', '${totalQty}', '${uniqueItems.length}')">
-                    📲 WhatsApp
+                <button class="whatsapp-btn" onclick="shareWhatsAppDirect('${section}')">
+                    <img src="whatsapp.png" alt="WhatsApp">
                 </button>
             </div>
         </div>
@@ -1171,40 +1180,42 @@ async function sharePDF(section){
     }
 }
 
-function shareWhatsApp(section, entries, qty, items) {
-    const fromDateVal = document.getElementById('fromDate').value;
-    const toDateVal = document.getElementById('toDate').value;
+async function shareWhatsAppDirect(target) {
+    let blob;
+    let filename;
     
-    const textMessage = `*📋 SMS Work Report - ${section}*\n\n` +
-                        `📅 *Period:* ${formatDisplayDate(fromDateVal)} to ${formatDisplayDate(toDateVal)}\n` +
-                        `📊 *Total Entries:* ${entries}\n` +
-                        `🔢 *Total Quantity:* ${qty}\n` +
-                        `📦 *Unique Items:* ${items}\n\n` +
-                        `_System: SSE/BSS/NBQS Work Report Generator_`;
-                        
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textMessage)}`;
-    window.open(whatsappUrl, '_blank');
-}
+    if (target === 'all') {
+        blob = await createAllPDF();
+        filename = `All_Sections_Report ${getMonthYearString()}.pdf`;
+    } else if (target === 'timeEarn') {
+        if (Object.keys(sectionData).length === 0) {
+            showToast('No data available to share');
+            return;
+        }
+        blob = await createTimeEarnPDFBlob();
+        filename = `All_Section_Time_Earn_Report ${getMonthYearString()}.pdf`;
+    } else {
+        blob = await createPDF(target);
+        filename = `${target} ${getMonthYearString()}.pdf`;
+    }
 
-function shareAllWhatsApp(totalTime) {
-    const fromDateVal = document.getElementById('fromDate').value;
-    const toDateVal = document.getElementById('toDate').value;
+    const file = new File([blob], filename, { type: 'application/pdf' });
     
-    let textMessage = `*📚 SMS Work Report - ALL SECTIONS Summary*\n\n` +
-                        `📅 *Period:* ${formatDisplayDate(fromDateVal)} to ${formatDisplayDate(toDateVal)}\n` +
-                        `⏳ *Total Time Earned:* ${totalTime} m/hrs\n\n` +
-                        `*Breakdown per Section:*\n`;
-                        
-    Object.keys(sectionData).forEach(sec => {
-        let totalQty = 0;
-        sectionData[sec].forEach(r => totalQty += Number(r.quantity));
-        textMessage += `• ${sec}: ${sectionData[sec].length} entries (${totalQty} Qty)\n`;
-    });
-    
-    textMessage += `\n_Generated via SSE/BSS/NBQS Work Report System_`;
-    
-    const whatsappUrl = `https://api.whatsapp.com/send?text=${encodeURIComponent(textMessage)}`;
-    window.open(whatsappUrl, '_blank');
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+            await navigator.share({
+                files: [file],
+                title: filename,
+                text: `Please find the work report summary for ${getMonthYearString()}`
+            });
+        } catch (err) {
+            if(err.name !== 'AbortError') {
+                showToast('Error sharing to WhatsApp');
+            }
+        }
+    } else {
+        showToast('Direct File Sharing not supported on this browser/system');
+    }
 }
 
 async function createAllPDF(){
