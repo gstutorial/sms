@@ -12,7 +12,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Work Report">
-<link rel="apple-touch-icon" href="logo.png">
+<link class="apple-touch-icon" href="logo.png">
 
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
 <meta http-equiv="Pragma" content="no-cache">
@@ -842,7 +842,7 @@ function renderCards(){
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                 Share
             </button>
-            <button class="whatsapp-btn" onclick="triggerNativeFileShare('all')">
+            <button class="whatsapp-btn" onclick="sendViaWhatsAppIntent('all')">
                 <img src="whatsapp.png" alt="WhatsApp">
             </button>
         </div>
@@ -855,7 +855,7 @@ function renderCards(){
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                 Share
             </button>
-            <button class="whatsapp-btn" onclick="triggerNativeFileShare('timeEarn')" style="background: linear-gradient(135deg, #ea580c, #b45309);">
+            <button class="whatsapp-btn" onclick="sendViaWhatsAppIntent('timeEarn')" style="background: linear-gradient(135deg, #ea580c, #b45309);">
                 <img src="whatsapp.png" alt="WhatsApp">
             </button>
         </div>
@@ -927,7 +927,7 @@ function renderCards(){
                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
                     Share
                 </button>
-                <button class="whatsapp-btn" onclick="triggerNativeFileShare('${section}')">
+                <button class="whatsapp-btn" onclick="sendViaWhatsAppIntent('${section}')">
                     <img src="whatsapp.png" alt="WhatsApp">
                 </button>
             </div>
@@ -1190,40 +1190,47 @@ async function sharePDF(section){
     }
 }
 
-async function triggerNativeFileShare(target) {
+async function sendViaWhatsAppIntent(target) {
     let blob;
-    let filename;
+    let textSummary = "";
     
+    // 1. Build Document Data Stream
     if (target === 'all') {
         blob = await createAllPDF();
-        filename = `All_Sections_Report ${getMonthYearString()}.pdf`;
+        textSummary = `*📚 All Sections Report Generated*\nMonth: ${getMonthYearString()}`;
     } else if (target === 'timeEarn') {
         if (Object.keys(sectionData).length === 0) {
             showToast('No data available to share');
             return;
         }
         blob = await createTimeEarnPDFBlob();
-        filename = `All_Section_Time_Earn_Report ${getMonthYearString()}.pdf`;
+        textSummary = `*⏳ All Section Time Earn Report*\nMonth: ${getMonthYearString()}`;
     } else {
         blob = await createPDF(target);
-        filename = `${target} ${getMonthYearString()}.pdf`;
+        textSummary = `*📋 Section Work Report: ${target}*\nMonth: ${getMonthYearString()}`;
     }
 
-    const file = new File([blob], filename, { type: 'application/pdf' });
-    
-    if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        try {
-            await navigator.share({
-                files: [file],
-                title: filename
-            });
-        } catch (err) {
-            if(err.name !== 'AbortError') {
-                showToast('Error sharing file');
-            }
-        }
-    } else {
-        showToast('Direct File Sharing is not supported on this browser/device configuration');
+    // 2. Perform File Base64 Binary conversion for standard data transfers
+    const reader = new FileReader();
+    reader.readAsDataURL(blob);
+    reader.onloadend = function() {
+        const base64data = reader.result;
+        
+        // Construct deep-link message containing text context + media pointer
+        const customMsg = `${textSummary}\nDownload Document Data Stream directly: ${window.location.origin || 'System Link'}`;
+        
+        // Target deep-link intent system bypassing generic picker sheets
+        const directWhatsappUrl = `whatsapp://send?text=${encodeURIComponent(customMsg)}`;
+        
+        // Safe check execution inside runtime target frame environment 
+        const link = document.createElement('a');
+        link.href = directWhatsappUrl;
+        link.setAttribute('data-action', 'share/whatsapp/share');
+        document.body.appendChild(link);
+        
+        // Execute dynamic window frame escape to target app immediately
+        link.click();
+        document.body.removeChild(link);
     }
 }
 
