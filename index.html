@@ -165,7 +165,6 @@ body{
     opacity: 0;
 }
 
-/* Updated Action Buttons Grouping */
 .category-group {
     margin-top: 20px;
     padding-top: 15px;
@@ -223,13 +222,44 @@ body{
     box-shadow: 0 5px 15px rgba(16,185,129,0.3);
 }
 
-.loading{
-    display:none;
-    text-align:center;
-    margin-top:15px;
-    font-size:15px;
-    font-weight:700;
+/* --- NEW FULL-SCREEN LOADING SPINNER --- */
+#loading {
+    display: none; 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(15, 23, 42, 0.75); 
+    backdrop-filter: blur(5px);
+    z-index: 99999;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
 }
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(56, 189, 248, 0.2);
+    border-top: 5px solid #38bdf8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 15px;
+}
+
+.loading-text {
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+@keyframes spin { 
+    0% { transform: rotate(0deg); } 
+    100% { transform: rotate(360deg); } 
+}
+/* -------------------------------------- */
 
 .results-section {
     width: 100%;
@@ -510,6 +540,12 @@ body{
 
 <body>
 
+<!-- FULL SCREEN LOADING OVERLAY -->
+<div id="loading">
+    <div class="spinner"></div>
+    <div class="loading-text">Fetching Google Sheet Data...</div>
+</div>
+
 <div class="container">
 
 <img src="logo.png" class="logo" onerror="this.src='data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSI5MCIgaGVpZ2h0PSI5MCI+PGNpcmNsZSBjeD0iNDUiIGN5PSI0NSIgcj0iNDUiIGZpbGw9IiM0NzU1NjkiLz48L3N2Zz4='">
@@ -557,7 +593,6 @@ SMS Work Report Generator
                 </div>
             </div>
 
-            <!-- Categories Added Here -->
             <div class="category-group">
                 <div class="category-title">Monthly Report</div>
                 <div class="action-buttons">
@@ -573,10 +608,6 @@ SMS Work Report Generator
                 </div>
             </div>
             
-        </div>
-
-        <div class="loading" id="loading">
-        Fetching Google Sheet Data...
         </div>
     </div>
 
@@ -638,8 +669,6 @@ SMS Work Report Generator
 
 <div class="footer">
 SSE/BSS/NBQS Work Report System
-</div>
-
 </div>
 
 <div id="toast"></div>
@@ -728,7 +757,6 @@ function formatForInput(d) {
     return `${y}-${m}-${day}`;
 }
 
-// Formats YYYY-MM-DD input to DD-MM-YYYY for safe file saving
 function getFormattedFileDate(dateStr) {
     if (!dateStr) return '';
     const [y, m, d] = dateStr.split('-');
@@ -789,7 +817,8 @@ async function generateReports(){
         return;
     }
 
-    document.getElementById('loading').style.display='block';
+    // Show Full-Screen Spinner
+    document.getElementById('loading').style.display='flex';
     document.getElementById('results').innerHTML='';
 
     const [rawMainData, rawTimeData] = await Promise.all([
@@ -831,6 +860,7 @@ async function generateReports(){
 
     renderCards();
     
+    // Hide Full-Screen Spinner and Switch Views
     document.getElementById('loading').style.display='none';
     document.getElementById('inputSection').style.display='none';
     document.getElementById('resultsSection').style.display='block';
@@ -859,7 +889,8 @@ async function generateDailyReportView() {
         return;
     }
 
-    document.getElementById('loading').style.display='block';
+    // Show Full-Screen Spinner
+    document.getElementById('loading').style.display='flex';
 
     const [rawMainData] = await Promise.all([
         fetchCSVData(SHEET_URL)
@@ -920,6 +951,7 @@ async function generateDailyReportView() {
     currentFromDateVal = fromDateVal;
     currentToDateVal = toDateVal;
     
+    // Hide Full-Screen Spinner and Switch Views
     document.getElementById('loading').style.display='none';
     document.getElementById('inputSection').style.display='none';
     document.getElementById('resultsSection').style.display='none';
