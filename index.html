@@ -37,7 +37,7 @@ body{
     min-height:100vh;
     padding:10px;
     color:white;
-    touch-action: manipulation; /* Prevents double-tap zooming */
+    touch-action: manipulation;
 }
 
 .container{
@@ -98,7 +98,7 @@ body{
 
 .filter-box{
     width: 100%;
-    max-width: 450px; /* Centers nicely on desktop */
+    max-width: 450px; 
     background: rgba(255,255,255,0.06);
     border-radius:24px;
     padding:18px;
@@ -121,7 +121,6 @@ body{
     font-weight:700;
 }
 
-/* --- CUSTOM DATE PICKER STYLES --- */
 .date-wrapper {
     position: relative;
     display: flex;
@@ -165,38 +164,52 @@ body{
     bottom: 0;
     opacity: 0;
 }
-/* ------------------------------------ */
 
+/* Updated Action Buttons for 4 options */
 .action-buttons{
-    display:flex;
-    gap:10px;
-    margin-top:8px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+    margin-top: 15px;
 }
 
-.default-btn{
-    flex: 0 0 35%;
+.action-btn {
     border:none;
     border-radius:16px;
     padding:15px 5px;
-    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     color:white;
     font-size:14px;
     font-weight:800;
     cursor:pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    transition: 0.3s;
+}
+
+.action-btn:active {
+    transform: scale(0.96);
+}
+
+.default-btn{
+    background: linear-gradient(135deg, #6366f1, #8b5cf6);
     box-shadow: 0 5px 15px rgba(99,102,241,0.3);
 }
 
+.today-btn{
+    background: linear-gradient(135deg, #f59e0b, #d97706);
+    box-shadow: 0 5px 15px rgba(245,158,11,0.3);
+}
+
 .generate-btn{
-    flex: 1;
-    border:none;
-    border-radius:16px;
-    padding:15px;
     background: linear-gradient(135deg, #2563eb, #06b6d4);
-    color:white;
-    font-size:16px;
-    font-weight:800;
-    cursor:pointer;
     box-shadow: 0 5px 15px rgba(37,99,235,0.3);
+}
+
+.daily-btn{
+    background: linear-gradient(135deg, #10b981, #059669);
+    box-shadow: 0 5px 15px rgba(16,185,129,0.3);
 }
 
 .loading{
@@ -354,7 +367,6 @@ body{
     background: linear-gradient(135deg, #2563eb, #38bdf8);
 }
 
-/* Premium Dark Gradient for ALL SECTIONS Card */
 .all-card{
     background: linear-gradient(135deg, #1e293b, #0f172a);
     border: 1px solid rgba(255, 255, 255, 0.15);
@@ -440,9 +452,9 @@ body{
         grid-template-columns: 1fr 1fr;
     }
     .all-card {
-        align-self: center; /* Centers the card horizontally */
+        align-self: center;
         width: 100%;
-        max-width: 500px; /* Restricts the full-width stretch */
+        max-width: 500px;
     }
 }
 
@@ -500,12 +512,10 @@ SMS Work Report Generator
             </div>
 
             <div class="action-buttons">
-                <button class="default-btn" onclick="setDefaultDates()">
-                📅 Default
-                </button>
-                <button class="generate-btn" onclick="generateReports()">
-                📄 Generate
-                </button>
+                <button class="default-btn action-btn" onclick="setDefaultDates()">📅 Default</button>
+                <button class="today-btn action-btn" onclick="setTodayDates()">📆 Today</button>
+                <button class="generate-btn action-btn" onclick="generateReports()">📄 Generate</button>
+                <button class="daily-btn action-btn" onclick="generateDailyReport()">📊 Daily Report</button>
             </div>
         </div>
 
@@ -605,6 +615,13 @@ function addHindiText(doc, text, y, ptSize, isBold, align='left', rightMargin=20
     doc.addImage(imgData, 'PNG', xPos, y - (heightMm * 0.1), widthMm, heightMm);
 }
 
+function formatForInput(d) {
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+}
+
 function setDefaultDates() {
     const today = new Date();
     const year = today.getFullYear();
@@ -613,15 +630,14 @@ function setDefaultDates() {
     const fromDateObj = new Date(year, month - 1, 17);
     const toDateObj = new Date(year, month, 16);
 
-    const formatForInput = (d) => {
-        const y = d.getFullYear();
-        const m = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        return `${y}-${m}-${day}`;
-    };
-
     document.getElementById('fromDate').value = formatForInput(fromDateObj);
     document.getElementById('toDate').value = formatForInput(toDateObj);
+}
+
+function setTodayDates() {
+    const todayStr = formatForInput(new Date());
+    document.getElementById('fromDate').value = todayStr;
+    document.getElementById('toDate').value = todayStr;
 }
 
 async function fetchCSVData(url) {
@@ -702,7 +718,6 @@ async function generateReports(){
 
     renderCards();
     
-    // Switch Views
     document.getElementById('loading').style.display='none';
     document.getElementById('inputSection').style.display='none';
     document.getElementById('resultsSection').style.display='block';
@@ -710,13 +725,230 @@ async function generateReports(){
     showToast('Reports Generated Successfully');
 }
 
-// Function to return to input screen and reset
+// Function to generate the Daily Combined PDF directly
+async function generateDailyReport() {
+    const fromDateVal = document.getElementById('fromDate').value;
+    const toDateVal = document.getElementById('toDate').value;
+
+    if(!fromDateVal || !toDateVal){
+        showToast('Please Select Date Range');
+        return;
+    }
+
+    const fParts = fromDateVal.split('-');
+    const from = new Date(fParts[0], fParts[1] - 1, fParts[2]);
+
+    const tParts = toDateVal.split('-');
+    const to = new Date(tParts[0], tParts[1] - 1, tParts[2]);
+    to.setHours(23, 59, 59, 999);
+
+    if(from > to){
+        showToast('From Date Must Be Smaller');
+        return;
+    }
+
+    document.getElementById('loading').style.display='block';
+
+    const [rawMainData] = await Promise.all([
+        fetchCSVData(SHEET_URL)
+    ]);
+
+    let dailyRows = [];
+
+    rawMainData.forEach(row => {
+        if(row.length >= 5 && row[0]) {
+            const dateStr = row[0];
+            const p = dateStr.split('/');
+            const rowDate = new Date(p[2], p[1]-1, p[0]);
+
+            if(rowDate >= from && rowDate <= to){
+                dailyRows.push({
+                    date: dateStr,
+                    section: row[1],
+                    item: row[2],
+                    quantity: Number(row[3]),
+                    thickness: row[4]
+                });
+            }
+        }
+    });
+
+    if (dailyRows.length === 0) {
+        showToast('No Data Found For Selected Dates');
+        document.getElementById('loading').style.display='none';
+        return;
+    }
+
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('portrait');
+
+    const fromFormatted = formatDisplayDate(`${fParts[0]}-${fParts[1]}-${fParts[2]}T00:00:00`);
+    const toFormatted = formatDisplayDate(`${tParts[0]}-${tParts[1]}-${tParts[2]}T00:00:00`);
+
+    dailyRows.sort((a,b)=>{
+        const pa = a.date.split('/');
+        const pb = b.date.split('/');
+        const dateA = new Date(pa[2],pa[1]-1,pa[0]);
+        const dateB = new Date(pb[2],pb[1]-1,pb[0]);
+        if (dateA.getTime() !== dateB.getTime()) return dateA - dateB;
+        return a.section.localeCompare(b.section);
+    });
+
+    const dateCounts = {};
+    dailyRows.forEach(r => {
+        dateCounts[r.date] = (dateCounts[r.date] || 0) + 1;
+    });
+
+    const bodyRows = [];
+    let currentGroup = -1;
+    let previousDate = '';
+
+    dailyRows.forEach(r => {
+        let displayDate = formatDisplayDate(r.date.split('/').reverse().join('-') + 'T00:00:00');
+
+        if (r.date !== previousDate) {
+            currentGroup++;
+            bodyRows.push({
+                row: [
+                    { content: displayDate, rowSpan: dateCounts[r.date], styles: { valign: 'middle', halign: 'center', fontStyle: 'bold' } },
+                    r.section,
+                    r.item,
+                    r.thickness,
+                    r.quantity
+                ],
+                group: currentGroup
+            });
+            previousDate = r.date;
+        } else {
+            bodyRows.push({
+                row: [
+                    r.section,
+                    r.item,
+                    r.thickness,
+                    r.quantity
+                ],
+                group: currentGroup
+            });
+        }
+    });
+
+    doc.setTextColor(25, 35, 55);
+    doc.setFontSize(13);
+    doc.setFont('helvetica', 'bold');
+    doc.text('Combined Daily Work Report', 3, 38);
+
+    doc.autoTable({
+        startY: 40,
+        margin: { top: 40, bottom: 12, left: 3, right: 3 }, 
+        head: [['Date', 'Section', 'Description', 'Thick.', 'Qty']],
+        body: bodyRows.map(r => r.row),
+        theme: 'grid',
+        styles: { fontSize: 7.5, cellPadding: 2.5, lineColor: [200, 200, 200], lineWidth: 0.1, valign: 'middle' },
+        headStyles: { textColor: [255, 255, 255], fontStyle: 'bold', halign: 'center', lineWidth: 0 },
+        columnStyles: {
+            0: { cellWidth: 25, halign: 'center', fontStyle: 'bold' },
+            1: { cellWidth: 30, halign: 'center' },
+            2: { cellWidth: 109 }, 
+            3: { cellWidth: 20, halign: 'center' },
+            4: { cellWidth: 20, halign: 'center', fontStyle: 'bold' }
+        },
+        didParseCell: function(data) {
+            if (data.section === 'head') { 
+                data.cell.styles.fillColor = null; 
+                data.cell.styles.lineWidth = 0;
+            }
+            if (data.section === 'body') {
+                const rowData = bodyRows[data.row.index];
+                const bgColor = rowData.group % 2 === 0 ? [255, 255, 255] : [235, 243, 255]; 
+                data.cell.styles.fillColor = bgColor;
+            }
+        },
+        willDrawCell: function(data) {
+            if (data.section === 'head') {
+                let tableW = 204; 
+                let relativeX = data.cell.x - 3;
+                
+                for (let i = 0; i <= data.cell.width; i += 0.5) { 
+                    let ratio = (relativeX + i) / tableW;
+                    ratio = Math.max(0, Math.min(1, ratio));
+                    
+                    let r = Math.round(30 + (37 - 30) * ratio);
+                    let g = Math.round(58 + (99 - 58) * ratio);
+                    let b = Math.round(138 + (235 - 138) * ratio);
+                    
+                    doc.setFillColor(r, g, b);
+                    let rectWidth = Math.min(0.6, data.cell.width - i);
+                    doc.rect(data.cell.x + i, data.cell.y, rectWidth, data.cell.height, 'F');
+                }
+            }
+        }
+    });
+
+    const endPage = doc.internal.getNumberOfPages();
+    const pageHeight = doc.internal.pageSize.height;
+    
+    for (let i = 1; i <= endPage; i++) {
+        doc.setPage(i);
+        
+        const headerHeight = 30;
+        for (let x = 0; x <= 210; x += 0.5) {
+            let ratio = x / 210;
+            let r = Math.round(15 + (30 - 15) * ratio);  
+            let g = Math.round(23 + (58 - 23) * ratio);
+            let b = Math.round(42 + (138 - 42) * ratio);
+            doc.setFillColor(r, g, b);
+            doc.rect(x, 0, 0.6, headerHeight, 'F'); 
+        }
+
+        const footerHeight = 12;
+        const footerY = pageHeight - footerHeight;
+        for (let x = 0; x <= 210; x += 0.5) {
+            let ratio = x / 210;
+            let r = Math.round(15 + (30 - 15) * ratio);
+            let g = Math.round(23 + (58 - 23) * ratio);
+            let b = Math.round(42 + (138 - 42) * ratio);
+            doc.setFillColor(r, g, b);
+            doc.rect(x, footerY, 0.6, footerHeight, 'F'); 
+        }
+
+        try {
+            const img = document.querySelector('.logo');
+            if(img) doc.addImage(img, 'PNG', 3, 2, 26, 26);
+        } catch(e) {}
+
+        doc.setTextColor(255, 255, 255);
+        doc.setFontSize(20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('COMBINED DAILY REPORT', 105, 12, {align:'center'});
+
+        doc.setFontSize(9);
+        doc.setTextColor(220, 230, 240);
+        doc.setFont('helvetica', 'normal');
+        doc.text('App Created By Gobind Sharma', 105, 17, {align:'center'});
+
+        doc.setFontSize(10);
+        doc.setFont('helvetica', 'bold');
+        doc.setTextColor(255, 255, 255);
+        const infoText = `DATE RANGE: ${fromFormatted} TO ${toFormatted}`;
+        doc.text(infoText, 105, 25, {align:'center'});
+
+        doc.setFontSize(9);
+        doc.setTextColor(230, 240, 250);
+        doc.setFont('helvetica', 'normal');
+        doc.text('SSE/BSS/NBQS Work Report System', 105, pageHeight - 4.5, { align: 'center' });
+    }
+
+    doc.save(`Daily_Report_${fromDateVal}_to_${toDateVal}.pdf`);
+    
+    document.getElementById('loading').style.display='none';
+    showToast('Daily Report Downloaded!');
+}
+
 function goBackToInput() {
     document.getElementById('resultsSection').style.display = 'none';
     document.getElementById('inputSection').style.display = 'flex';
     document.getElementById('results').innerHTML = '';
     
-    // Reset dates
     document.getElementById('fromDate').value = '';
     document.getElementById('toDate').value = '';
 }
@@ -748,7 +980,6 @@ function renderCards(){
     const container = document.getElementById('results');
     container.innerHTML='';
 
-    // Calculate Grand Total Time Earned & Track Missing Time Items
     let totalTimeEarned = 0;
     let itemAggregates = {};
     let missingTimeItems = new Set();
@@ -763,13 +994,12 @@ function renderCards(){
     Object.keys(itemAggregates).forEach(item => {
         let timePerUnit = findTimeAllotted(item);
         if (timePerUnit === 0) {
-            missingTimeItems.add(item); // Item has no time allotted value
+            missingTimeItems.add(item); 
         }
         totalTimeEarned += (itemAggregates[item] * timePerUnit);
     });
     const formattedTotalTime = totalTimeEarned.toFixed(3);
 
-    // Prepare Missing Items HTML if there are any
     let missingItemsHtml = '';
     if (missingTimeItems.size > 0) {
         const itemsList = Array.from(missingTimeItems).join('  •  ');
@@ -786,7 +1016,6 @@ function renderCards(){
         `;
     }
 
-    // 1. Create ALL SECTIONS card (Full Width at Top)
     const allCard = document.createElement('div');
     allCard.className = 'section-card all-card';
 
@@ -836,23 +1065,19 @@ function renderCards(){
     `;
     container.appendChild(allCard);
 
-    // 2. Create the Masonry Grid Wrapper
     const masonryGrid = document.createElement('div');
     masonryGrid.className = 'masonry-grid';
 
-    // 3. Create Left and Right Columns
     const colLeft = document.createElement('div');
     colLeft.className = 'masonry-col';
 
     const colRight = document.createElement('div');
     colRight.className = 'masonry-col';
 
-    // Add columns to grid wrapper, grid to container
     masonryGrid.appendChild(colLeft);
     masonryGrid.appendChild(colRight);
     container.appendChild(masonryGrid);
 
-    // 4. Populate Cards into Alternating Columns
     Object.keys(sectionData).forEach((section, index)=>{
         const rows = sectionData[section];
         let totalQty = 0;
@@ -904,7 +1129,6 @@ function renderCards(){
         </div>
         `;
         
-        // Even indexes go left, Odd indexes go right
         if (index % 2 === 0) {
             colLeft.appendChild(card);
         } else {
@@ -1011,7 +1235,7 @@ function createSectionPDF(doc, section, rows) {
         },
         willDrawCell: function(data) {
             if (data.section === 'head') {
-                let tableW = 120; // 210 (page) - 3 (left margin) - 87 (right margin)
+                let tableW = 120; 
                 let relativeX = data.cell.x - 3;
                 
                 for (let i = 0; i <= data.cell.width; i += 0.5) { 
@@ -1057,7 +1281,7 @@ function createSectionPDF(doc, section, rows) {
         },
         willDrawCell: function(data) {
             if (data.section === 'head') {
-                let tableW = 81; // 210 (page) - 126 (left margin) - 3 (right margin)
+                let tableW = 81; 
                 let relativeX = data.cell.x - 126;
                 
                 for (let i = 0; i <= data.cell.width; i += 0.5) { 
