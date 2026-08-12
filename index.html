@@ -165,11 +165,27 @@ body{
     opacity: 0;
 }
 
-.action-buttons{
-    display: grid;
-    grid-template-columns: 1fr 1fr 1fr;
+/* Updated Action Buttons Grouping */
+.category-group {
+    margin-top: 20px;
+    padding-top: 15px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.category-title {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    text-align: center;
+}
+
+.action-buttons {
+    display: flex;
+    flex-direction: column;
     gap: 10px;
-    margin-top: 15px;
 }
 
 .action-btn {
@@ -185,6 +201,7 @@ body{
     align-items: center;
     gap: 6px;
     transition: 0.3s;
+    width: 100%;
 }
 
 .action-btn:active {
@@ -391,7 +408,6 @@ body{
     background: rgba(255, 255, 255, 0.15);
 }
 
-/* New CSS for Daily Report Table */
 .table-container {
     background: rgba(255,255,255,0.05);
     border-radius: 18px;
@@ -468,6 +484,15 @@ body{
     box-shadow: 0 8px 25px rgba(0,0,0,0.5);
 }
 
+@media(min-width:600px){
+    .action-buttons {
+        flex-direction: row;
+    }
+    .action-btn {
+        flex: 1;
+    }
+}
+
 @media(min-width:992px){
     .masonry-grid {
         grid-template-columns: 1fr 1fr;
@@ -532,11 +557,22 @@ SMS Work Report Generator
                 </div>
             </div>
 
-            <div class="action-buttons">
-                <button class="default-btn action-btn" onclick="setDefaultDates()">📅 Default</button>
-                <button class="generate-btn action-btn" onclick="generateReports()">📄 Generate</button>
-                <button class="daily-btn action-btn" onclick="generateDailyReportView()">📊 Daily Report</button>
+            <!-- Categories Added Here -->
+            <div class="category-group">
+                <div class="category-title">Monthly Report</div>
+                <div class="action-buttons">
+                    <button class="default-btn action-btn" onclick="setDefaultDates()">📅 Work order date range</button>
+                    <button class="generate-btn action-btn" onclick="generateReports()">📄 Generate monthly report</button>
+                </div>
             </div>
+
+            <div class="category-group">
+                <div class="category-title">Daily Report</div>
+                <div class="action-buttons">
+                    <button class="daily-btn action-btn" onclick="generateDailyReportView()">📊 Daily report</button>
+                </div>
+            </div>
+            
         </div>
 
         <div class="loading" id="loading">
@@ -620,7 +656,6 @@ const TIME_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OP1z06rCpFMTRiAw
 let sectionData = {};
 let globalTimeData = [];
 
-// Global State for Daily Report PDF generation
 let currentDailyRows = [];
 let currentFromDateVal = '';
 let currentToDateVal = '';
@@ -691,6 +726,13 @@ function formatForInput(d) {
     const m = String(d.getMonth() + 1).padStart(2, '0');
     const day = String(d.getDate()).padStart(2, '0');
     return `${y}-${m}-${day}`;
+}
+
+// Formats YYYY-MM-DD input to DD-MM-YYYY for safe file saving
+function getFormattedFileDate(dateStr) {
+    if (!dateStr) return '';
+    const [y, m, d] = dateStr.split('-');
+    return `${d}-${m}-${y}`;
 }
 
 function setDefaultDates() {
@@ -796,7 +838,6 @@ async function generateReports(){
     showToast('Reports Generated Successfully');
 }
 
-// Function to fetch data and show the HTML table view for Daily Report
 async function generateDailyReportView() {
     const fromDateVal = document.getElementById('fromDate').value;
     const toDateVal = document.getElementById('toDate').value;
@@ -850,7 +891,6 @@ async function generateDailyReportView() {
         return;
     }
 
-    // Sort by Date, then Section
     dailyRows.sort((a,b)=>{
         const pa = a.date.split('/');
         const pb = b.date.split('/');
@@ -860,7 +900,6 @@ async function generateDailyReportView() {
         return a.section.localeCompare(b.section);
     });
 
-    // Populate HTML Table
     const tableBody = document.getElementById('dailyTableBody');
     tableBody.innerHTML = '';
     
@@ -877,12 +916,10 @@ async function generateDailyReportView() {
         tableBody.appendChild(tr);
     });
 
-    // Save global state for PDF generation
     currentDailyRows = dailyRows;
     currentFromDateVal = fromDateVal;
     currentToDateVal = toDateVal;
     
-    // Switch Views
     document.getElementById('loading').style.display='none';
     document.getElementById('inputSection').style.display='none';
     document.getElementById('resultsSection').style.display='none';
@@ -891,7 +928,6 @@ async function generateDailyReportView() {
     showToast('Daily Report Loaded Successfully');
 }
 
-// Reusable PDF generation function returning a Blob
 function getDailyPDFBlob() {
     const { jsPDF } = window.jspdf;
     const doc = new jsPDF('portrait');
@@ -942,7 +978,7 @@ function getDailyPDFBlob() {
     doc.setTextColor(25, 35, 55);
     doc.setFontSize(13);
     doc.setFont('helvetica', 'bold');
-    doc.text('Combined Daily Work Report', 3, 38);
+    doc.text('Daily SMS Work Report', 3, 38);
 
     doc.autoTable({
         startY: 40,
@@ -1026,7 +1062,7 @@ function getDailyPDFBlob() {
         doc.setTextColor(255, 255, 255);
         doc.setFontSize(20);
         doc.setFont('helvetica', 'bold');
-        doc.text('COMBINED DAILY REPORT', 105, 12, {align:'center'});
+        doc.text('DAILY SMS WORK REPORT', 105, 12, {align:'center'});
 
         doc.setFontSize(9);
         doc.setTextColor(220, 230, 240);
@@ -1052,7 +1088,11 @@ function downloadDailyReport() {
     const blob = getDailyPDFBlob();
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = `Daily_Report_${currentFromDateVal}_to_${currentToDateVal}.pdf`;
+    
+    const fDate = getFormattedFileDate(currentFromDateVal);
+    const tDate = getFormattedFileDate(currentToDateVal);
+    a.download = `Sms_daily_report (${fDate} to ${tDate}).pdf`;
+    
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -1062,7 +1102,10 @@ function downloadDailyReport() {
 
 async function shareDailyReport() {
     const blob = getDailyPDFBlob();
-    const filename = `Daily_Report_${currentFromDateVal}_to_${currentToDateVal}.pdf`;
+    const fDate = getFormattedFileDate(currentFromDateVal);
+    const tDate = getFormattedFileDate(currentToDateVal);
+    const filename = `Sms_daily_report (${fDate} to ${tDate}).pdf`;
+    
     const file = new File([blob], filename, { type: 'application/pdf' });
     if(navigator.canShare && navigator.canShare({files: [file]})){
         await navigator.share({ files: [file] });
@@ -1072,12 +1115,10 @@ async function shareDailyReport() {
 }
 
 function goBackToInput() {
-    // Reset Views
     document.getElementById('resultsSection').style.display = 'none';
     document.getElementById('dailyReportSection').style.display = 'none';
     document.getElementById('inputSection').style.display = 'flex';
     
-    // Clear DOM content
     document.getElementById('results').innerHTML = '';
     document.getElementById('dailyTableBody').innerHTML = '';
 }
