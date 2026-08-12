@@ -165,10 +165,9 @@ body{
     opacity: 0;
 }
 
-/* Updated Action Buttons for 4 options */
 .action-buttons{
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
     gap: 10px;
     margin-top: 15px;
 }
@@ -195,11 +194,6 @@ body{
 .default-btn{
     background: linear-gradient(135deg, #6366f1, #8b5cf6);
     box-shadow: 0 5px 15px rgba(99,102,241,0.3);
-}
-
-.today-btn{
-    background: linear-gradient(135deg, #f59e0b, #d97706);
-    box-shadow: 0 5px 15px rgba(245,158,11,0.3);
 }
 
 .generate-btn{
@@ -397,6 +391,33 @@ body{
     background: rgba(255, 255, 255, 0.15);
 }
 
+/* New CSS for Daily Report Table */
+.table-container {
+    background: rgba(255,255,255,0.05);
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 15px;
+    width: 100%;
+}
+.styled-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+.styled-table thead tr {
+    background: rgba(0,0,0,0.2);
+    color: #38bdf8;
+}
+.styled-table th, .styled-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    white-space: nowrap;
+}
+.styled-table tbody tr:hover {
+    background: rgba(255,255,255,0.08);
+}
+
 .footer{
     text-align:center;
     margin-top:22px;
@@ -513,9 +534,8 @@ SMS Work Report Generator
 
             <div class="action-buttons">
                 <button class="default-btn action-btn" onclick="setDefaultDates()">📅 Default</button>
-                <button class="today-btn action-btn" onclick="setTodayDates()">📆 Today</button>
                 <button class="generate-btn action-btn" onclick="generateReports()">📄 Generate</button>
-                <button class="daily-btn action-btn" onclick="generateDailyReport()">📊 Daily Report</button>
+                <button class="daily-btn action-btn" onclick="generateDailyReportView()">📊 Daily Report</button>
             </div>
         </div>
 
@@ -524,6 +544,7 @@ SMS Work Report Generator
         </div>
     </div>
 
+    <!-- Generated Section Wise Results -->
     <div class="results-section" id="resultsSection" style="display: none;">
         <div class="results" id="results"></div>
         
@@ -534,6 +555,47 @@ SMS Work Report Generator
             </svg>
             Back to Date Selection
         </button>
+    </div>
+
+    <!-- Daily Report Table View -->
+    <div class="results-section" id="dailyReportSection" style="display: none;">
+        
+        <div class="button-row" style="margin-bottom: 16px;">
+            <button class="download-btn" onclick="downloadDailyReport()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                Download PDF
+            </button>
+            <button class="share-btn" onclick="shareDailyReport()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+                Share PDF
+            </button>
+        </div>
+
+        <div class="table-container" style="overflow-x: auto;">
+            <table class="styled-table">
+                <thead>
+                    <tr>
+                        <th>Date</th>
+                        <th>Section</th>
+                        <th>Description</th>
+                        <th>Thick.</th>
+                        <th>Qty</th>
+                    </tr>
+                </thead>
+                <tbody id="dailyTableBody">
+                    <!-- Rows will be injected here -->
+                </tbody>
+            </table>
+        </div>
+
+        <button class="back-btn" onclick="goBackToInput()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="19" y1="12" x2="5" y2="12"></line>
+                <polyline points="12 19 5 12 12 5"></polyline>
+            </svg>
+            Back to Date Selection
+        </button>
+
     </div>
 
 </div>
@@ -557,6 +619,15 @@ const TIME_SHEET_URL = 'https://docs.google.com/spreadsheets/d/1OP1z06rCpFMTRiAw
 
 let sectionData = {};
 let globalTimeData = [];
+
+// Global State for Daily Report PDF generation
+let currentDailyRows = [];
+let currentFromDateVal = '';
+let currentToDateVal = '';
+
+window.addEventListener('DOMContentLoaded', () => {
+    setTodayDates();
+});
 
 function showToast(message){
     const toast = document.getElementById('toast');
@@ -725,8 +796,8 @@ async function generateReports(){
     showToast('Reports Generated Successfully');
 }
 
-// Function to generate the Daily Combined PDF directly
-async function generateDailyReport() {
+// Function to fetch data and show the HTML table view for Daily Report
+async function generateDailyReportView() {
     const fromDateVal = document.getElementById('fromDate').value;
     const toDateVal = document.getElementById('toDate').value;
 
@@ -779,12 +850,7 @@ async function generateDailyReport() {
         return;
     }
 
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF('portrait');
-
-    const fromFormatted = formatDisplayDate(`${fParts[0]}-${fParts[1]}-${fParts[2]}T00:00:00`);
-    const toFormatted = formatDisplayDate(`${tParts[0]}-${tParts[1]}-${tParts[2]}T00:00:00`);
-
+    // Sort by Date, then Section
     dailyRows.sort((a,b)=>{
         const pa = a.date.split('/');
         const pb = b.date.split('/');
@@ -794,8 +860,49 @@ async function generateDailyReport() {
         return a.section.localeCompare(b.section);
     });
 
+    // Populate HTML Table
+    const tableBody = document.getElementById('dailyTableBody');
+    tableBody.innerHTML = '';
+    
+    dailyRows.forEach(row => {
+        let displayDate = formatDisplayDate(row.date.split('/').reverse().join('-') + 'T00:00:00');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><strong>${displayDate}</strong></td>
+            <td>${row.section}</td>
+            <td>${row.item}</td>
+            <td>${row.thickness}</td>
+            <td><strong>${row.quantity}</strong></td>
+        `;
+        tableBody.appendChild(tr);
+    });
+
+    // Save global state for PDF generation
+    currentDailyRows = dailyRows;
+    currentFromDateVal = fromDateVal;
+    currentToDateVal = toDateVal;
+    
+    // Switch Views
+    document.getElementById('loading').style.display='none';
+    document.getElementById('inputSection').style.display='none';
+    document.getElementById('resultsSection').style.display='none';
+    document.getElementById('dailyReportSection').style.display='block';
+    
+    showToast('Daily Report Loaded Successfully');
+}
+
+// Reusable PDF generation function returning a Blob
+function getDailyPDFBlob() {
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF('portrait');
+
+    const fParts = currentFromDateVal.split('-');
+    const tParts = currentToDateVal.split('-');
+    const fromFormatted = formatDisplayDate(`${fParts[0]}-${fParts[1]}-${fParts[2]}T00:00:00`);
+    const toFormatted = formatDisplayDate(`${tParts[0]}-${tParts[1]}-${tParts[2]}T00:00:00`);
+
     const dateCounts = {};
-    dailyRows.forEach(r => {
+    currentDailyRows.forEach(r => {
         dateCounts[r.date] = (dateCounts[r.date] || 0) + 1;
     });
 
@@ -803,7 +910,7 @@ async function generateDailyReport() {
     let currentGroup = -1;
     let previousDate = '';
 
-    dailyRows.forEach(r => {
+    currentDailyRows.forEach(r => {
         let displayDate = formatDisplayDate(r.date.split('/').reverse().join('-') + 'T00:00:00');
 
         if (r.date !== previousDate) {
@@ -938,19 +1045,41 @@ async function generateDailyReport() {
         doc.text('SSE/BSS/NBQS Work Report System', 105, pageHeight - 4.5, { align: 'center' });
     }
 
-    doc.save(`Daily_Report_${fromDateVal}_to_${toDateVal}.pdf`);
-    
-    document.getElementById('loading').style.display='none';
+    return doc.output('blob');
+}
+
+function downloadDailyReport() {
+    const blob = getDailyPDFBlob();
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = `Daily_Report_${currentFromDateVal}_to_${currentToDateVal}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
     showToast('Daily Report Downloaded!');
 }
 
+async function shareDailyReport() {
+    const blob = getDailyPDFBlob();
+    const filename = `Daily_Report_${currentFromDateVal}_to_${currentToDateVal}.pdf`;
+    const file = new File([blob], filename, { type: 'application/pdf' });
+    if(navigator.canShare && navigator.canShare({files: [file]})){
+        await navigator.share({ files: [file] });
+    } else {
+        showToast('Sharing Not Supported');
+    }
+}
+
 function goBackToInput() {
+    // Reset Views
     document.getElementById('resultsSection').style.display = 'none';
+    document.getElementById('dailyReportSection').style.display = 'none';
     document.getElementById('inputSection').style.display = 'flex';
-    document.getElementById('results').innerHTML = '';
     
-    document.getElementById('fromDate').value = '';
-    document.getElementById('toDate').value = '';
+    // Clear DOM content
+    document.getElementById('results').innerHTML = '';
+    document.getElementById('dailyTableBody').innerHTML = '';
 }
 
 function toggleCard(bodyId, arrowId) {
